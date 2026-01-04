@@ -38,6 +38,7 @@ def main():
     parser.add_argument("--device-id", required=True, help="Device serial (e.g., 192.168.1.100:5555)")
     parser.add_argument("--base-url", default="http://localhost:8000/v1", help="Model API base URL")
     parser.add_argument("--model", default="MAI-UI-8B", help="Model name")
+    parser.add_argument("--apikey", default="EMPTY", help="API key for model authentication (optional)")
     parser.add_argument("--max-steps", type=int, default=50, help="Maximum steps")
     parser.add_argument("--debug", action="store_true", help="Enable debug logging")
     
@@ -63,6 +64,7 @@ def main():
         agent = MAIUINaivigationAgent(
             llm_base_url=args.base_url,
             model_name=args.model,
+            api_key=args.apikey,
             runtime_conf={
                 "history_n": 3,
                 "temperature": 0.0,
