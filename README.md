@@ -250,6 +250,174 @@ agent = MAIUINaivigationAgent(
 
 ---
 
+## 📱 Phone Agent Framework - Autonomous Android Control
+
+The Phone Agent Framework enables you to control Android devices with natural language commands using MAI-UI models. Execute multi-step tasks autonomously with a simple command-line interface.
+
+### Quick Start
+
+#### 1. Install Phone Agent
+
+```bash
+# Install with Phone Agent dependencies
+pip install -e .
+```
+
+#### 2. Connect Android Device
+
+```bash
+# Enable USB debugging on your Android device
+# Connect via USB cable
+
+# Verify connection
+mai-phone devices
+```
+
+#### 3. Run Your First Task
+
+```bash
+# Simple one-command execution
+mai-phone "open settings and enable WiFi"
+
+# More complex tasks
+mai-phone "open Xiaohongshu and search for nearby coffee shops"
+mai-phone "book a train ticket to Shanghai"
+```
+
+### CLI Commands
+
+```bash
+# Execute a task
+mai-phone "your natural language instruction"
+mai-phone run "your instruction"  # explicit run command
+
+# List connected devices
+mai-phone devices
+
+# Configuration management
+mai-phone config show          # View current config
+mai-phone config init          # Create default config file
+
+# System diagnostics
+mai-phone doctor               # Check setup and diagnose issues
+
+# Replay saved trajectories
+mai-phone replay ~/.mai-phone/logs/task_xxx/trajectory.json
+
+# Get help
+mai-phone --help
+```
+
+### Configuration
+
+Create a configuration file at `~/.mai-phone/config.yaml`:
+
+```yaml
+model:
+  base_url: "http://localhost:8000/v1"
+  name: "MAI-UI-8B"
+  temperature: 0.0
+  history_n: 3
+
+device:
+  serial: null  # auto-detect if not specified
+  adb_server: "127.0.0.1:5037"
+
+execution:
+  max_steps: 50
+  screenshot_delay: 0.5  # seconds between actions
+  retry_attempts: 3
+
+logging:
+  level: "INFO"
+  save_trajectory: true
+  output_dir: "~/.mai-phone/logs"
+```
+
+Or use CLI flags to override:
+
+```bash
+mai-phone --model-url http://192.168.1.100:8000/v1 \
+          --device-serial ABC123 \
+          --max-steps 30 \
+          --debug \
+          "your task"
+```
+
+### Programmatic Usage
+
+```python
+from phone_agent.config import Config
+from phone_agent.device_bridge import DeviceBridge
+from phone_agent.integration import AgentIntegration
+from phone_agent.executor import TaskExecutor
+from src.mai_naivigation_agent import MAIUINaivigationAgent
+
+# Load configuration
+config = Config.load()
+
+# Connect to device
+device = DeviceBridge()
+
+# Initialize agent
+agent = MAIUINaivigationAgent(
+    llm_base_url=config.model.base_url,
+    model_name=config.model.name,
+)
+
+# Create integration and executor
+integration = AgentIntegration(agent, device)
+executor = TaskExecutor(integration, config)
+
+# Execute task
+result = executor.execute_task("open settings")
+
+print(f"Status: {result.status}")
+print(f"Steps: {result.total_steps}")
+print(f"Duration: {result.duration_seconds:.2f}s")
+```
+
+See `examples/basic_tasks.py` for more examples.
+
+### Features
+
+✅ **One-Command Execution**: Simple CLI for natural language tasks  
+✅ **Multi-Step Autonomy**: Execute complex tasks requiring 5-50 steps  
+✅ **User Interaction**: Supports `ask_user` for clarification during execution  
+✅ **Trajectory Tracking**: Save and replay execution history  
+✅ **Error Recovery**: Automatic retry and graceful error handling  
+✅ **Device Management**: List, select, and manage multiple devices  
+✅ **Flexible Configuration**: YAML files, environment variables, or CLI flags  
+
+### Troubleshooting
+
+**Device not found:**
+```bash
+# Check USB debugging is enabled
+# Verify ADB connection
+adb devices
+
+# Restart ADB server
+adb kill-server && adb start-server
+
+# Run diagnostics
+mai-phone doctor
+```
+
+**Model connection error:**
+```bash
+# Verify vLLM server is running
+curl http://localhost:8000/v1/models
+
+# Check config
+mai-phone config show
+
+# Test with custom URL
+mai-phone --model-url http://localhost:8000/v1 "test task"
+```
+
+---
+
 ## 📝 Citation
 
 If you find this project useful for your research, please consider citing our works:

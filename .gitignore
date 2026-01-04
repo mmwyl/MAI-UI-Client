@@ -78,3 +78,7 @@ logs/
 # Local configuration
 .env.local
 config.local.py
+
+# Phone Agent user data
+.mai-phone/
+*.log
