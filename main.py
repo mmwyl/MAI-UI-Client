@@ -94,12 +94,24 @@ def main():
             action_type = action_dict.get("action", "unknown")
             print(f"Action: {action_type}")
             
-            if action_type == "FINISH":
+            if action_type == "terminate":
+                status = action_dict.get("status", "success")
                 done = True
-                print("✅ Task completed!")
+                print(f"✅ Task {status}!")
                 break
             
-            elif action_type == "tap":
+            elif action_type == "open":
+                app_name = action_dict.get("text", "")
+                print(f"  Opening app: {app_name}")
+                # Try to launch the app
+                # For simplicity, we'll use the package name mapping
+                # You might need to add a proper app name to package mapping
+                try:
+                    device._adb_command("shell", "monkey", "-p", f"com.android.{app_name.lower()}", "1")
+                except:
+                    print(f"  Warning: Could not launch {app_name}, trying generic launch...")
+            
+            elif action_type == "click":
                 coord = action_dict["coordinate"]
                 # MAI-UI outputs coordinates in 0-1000 range, not 0-1!
                 x = int(coord[0] / 1000 * device.screen_width)
@@ -123,13 +135,20 @@ def main():
                 print(f"  Type: {text}")
                 device.type_text(text)
             
-            elif action_type == "back":
-                print("  Press back")
-                device.press_back()
+            elif action_type == "system_button":
+                button = action_dict.get("button", "back")
+                print(f"  Press {button} button")
+                if button == "back":
+                    device.press_back()
+                elif button == "home":
+                    device.press_home()
+                elif button == "menu" or button == "recent":
+                    device.press_recent()
             
-            elif action_type == "home":
-                print("  Press home")
-                device.press_home()
+            elif action_type == "wait":
+                print("  Waiting...")
+                import time
+                time.sleep(1)
             
             else:
                 print(f"  Unknown action: {action_type}")
