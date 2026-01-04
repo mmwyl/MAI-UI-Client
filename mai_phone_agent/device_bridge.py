@@ -18,10 +18,10 @@ screenshot capture, and action execution on Android devices.
 """
 
 import io
+import subprocess
 import time
 from typing import Optional, Tuple, List, Dict, Any
 from PIL import Image
-import adbutils
 
 
 class DeviceBridgeError(Exception):
@@ -68,19 +68,52 @@ class DeviceBridge:
         
         Args:
             device_serial: Optional device serial number. If None, auto-detects single device.
-            adb_server_host: ADB server host address.
-            adb_server_port: ADB server port.
+            adb_server_host: ADB server host address (unused, kept for compatibility).
+            adb_server_port: ADB server port (unused, kept for compatibility).
             
         Raises:
             DeviceNotFoundError: If no device found or multiple devices without serial specified.
         """
-        self.adb = adbutils.AdbClient(host=adb_server_host, port=adb_server_port)
-        self.device: Optional[adbutils.AdbDevice] = None
+        self.device_serial = device_serial
         self.screen_width: int = 0
         self.screen_height: int = 0
         self._screenshot_cache: Optional[bytes] = None
         
         self.connect(device_serial)
+    
+    def _adb_command(self, *args) -> str:
+        """Execute ADB command and return text output."""
+        cmd = ["adb"]
+        if self.device_serial:
+            cmd.extend(["-s", self.device_serial])
+        cmd.extend(args)
+        
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            if result.returncode != 0:
+                raise Exception(f"ADB command failed: {result.stderr}")
+            return result.stdout.strip()
+        except subprocess.TimeoutExpired:
+            raise DeviceDisconnectedError("ADB command timed out")
+        except Exception as e:
+            raise DeviceDisconnectedError(f"ADB command failed: {e}")
+    
+    def _adb_command_bytes(self, *args) -> bytes:
+        """Execute ADB command and return bytes output."""
+        cmd = ["adb"]
+        if self.device_serial:
+            cmd.extend(["-s", self.device_serial])
+        cmd.extend(args)
+        
+        try:
+            result = subprocess.run(cmd, capture_output=True, timeout=30)
+            if result.returncode != 0:
+                raise Exception(f"ADB command failed: {result.stderr.decode()}")
+            return result.stdout
+        except subprocess.TimeoutExpired:
+            raise DeviceDisconnectedError("ADB command timed out")
+        except Exception as e:
+            raise DeviceDisconnectedError(f"ADB command failed: {e}")
     
     def list_devices(self) -> List[Dict[str, str]]:
         """
@@ -89,29 +122,46 @@ class DeviceBridge:
         Returns:
             List of device info dicts with keys: serial, state, model, android_version.
         """
-        devices = []
-        for device in self.adb.device_list():
-            try:
-                info = {
-                    "serial": device.serial,
-                    "state": device.state,
-                }
-                # Try to get additional info if device is online
-                if device.state == "device":
-                    try:
-                        info["model"] = device.prop.get("ro.product.model", "Unknown")
-                        info["android_version"] = device.prop.get("ro.build.version.release", "Unknown")
-                    except:
-                        info["model"] = "Unknown"
-                        info["android_version"] = "Unknown"
-                else:
-                    info["model"] = "N/A"
-                    info["android_version"] = "N/A"
-                devices.append(info)
-            except Exception:
-                # Skip devices that can't be queried
-                continue
-        return devices
+        try:
+            result = subprocess.run(["adb", "devices"], capture_output=True, text=True, timeout=10)
+            lines = result.stdout.strip().split('\n')[1:]  # Skip "List of devices attached"
+            
+            devices = []
+            for line in lines:
+                line = line.strip()
+                if line:
+                    parts = line.split('\t')
+                    if len(parts) >= 2:
+                        serial = parts[0]
+                        state = parts[1]
+                        
+                        # Try to get device info
+                        model = "Unknown"
+                        version = "Unknown"
+                        if state == "device":
+                            try:
+                                model_cmd = ["adb", "-s", serial, "shell", "getprop", "ro.product.model"]
+                                model_result = subprocess.run(model_cmd, capture_output=True, text=True, timeout=5)
+                                if model_result.returncode == 0:
+                                    model = model_result.stdout.strip()
+                                
+                                version_cmd = ["adb", "-s", serial, "shell", "getprop", "ro.build.version.release"]
+                                version_result = subprocess.run(version_cmd, capture_output=True, text=True, timeout=5)
+                                if version_result.returncode == 0:
+                                    version = version_result.stdout.strip()
+                            except:
+                                pass
+                        
+                        devices.append({
+                            "serial": serial,
+                            "state": state,
+                            "model": model,
+                            "android_version": version
+                        })
+            
+            return devices
+        except Exception as e:
+            raise DeviceBridgeError(f"Failed to list devices: {e}")
     
     def connect(self, device_serial: Optional[str] = None) -> None:
         """
@@ -125,22 +175,29 @@ class DeviceBridge:
             DeviceDisconnectedError: If connection fails.
         """
         try:
-            devices = self.adb.device_list()
+            devices = self.list_devices()
             
             if not devices:
                 raise DeviceNotFoundError(
-                    "No Android devices found. Please connect a device via USB and enable USB debugging."
+                    "No Android devices found. Please connect a device and enable USB debugging.\n"
+                    "For WiFi ADB: adb connect <IP>:<PORT>"
                 )
             
             if device_serial:
-                # Connect to specific device
-                self.device = self.adb.device(serial=device_serial)
+                # Check if specified device exists
+                device_found = any(d['serial'] == device_serial for d in devices)
+                if not device_found:
+                    available = "\n".join([f"  - {d['serial']}" for d in devices])
+                    raise DeviceNotFoundError(
+                        f"Device {device_serial} not found.\nAvailable devices:\n{available}"
+                    )
+                self.device_serial = device_serial
             else:
                 # Auto-detect single device
                 if len(devices) == 1:
-                    self.device = devices[0]
+                    self.device_serial = devices[0]['serial']
                 else:
-                    device_list_str = "\n".join([f"  - {d.serial}" for d in devices])
+                    device_list_str = "\n".join([f"  - {d['serial']}" for d in devices])
                     raise DeviceNotFoundError(
                         f"Multiple devices found. Please specify device serial:\n{device_list_str}\n"
                         f"Use --device-serial <serial> flag."
@@ -150,17 +207,19 @@ class DeviceBridge:
             self._verify_connection()
             self.screen_width, self.screen_height = self.get_screen_size()
             
-        except adbutils.AdbError as e:
+        except DeviceNotFoundError:
+            raise
+        except Exception as e:
             raise DeviceDisconnectedError(f"Failed to connect to device: {e}")
     
     def _verify_connection(self) -> None:
         """Verify device connection is healthy."""
-        if not self.device:
+        if not self.device_serial:
             raise DeviceDisconnectedError("Device not connected")
         
         try:
             # Simple ping to verify connection
-            self.device.shell("echo ping")
+            self._adb_command("shell", "echo", "ping")
         except Exception as e:
             raise DeviceDisconnectedError(f"Device connection lost: {e}")
     
@@ -199,7 +258,7 @@ class DeviceBridge:
         
         try:
             # Use wm size command
-            output = self.device.shell("wm size")
+            output = self._adb_command("shell", "wm", "size")
             # Output format: "Physical size: 1080x1920"
             size_str = output.strip().split(":")[-1].strip()
             width, height = map(int, size_str.split("x"))
@@ -227,14 +286,14 @@ class DeviceBridge:
             self._verify_connection()
             
             try:
-                # Capture screenshot using adbutils
-                img_bytes = self.device.screenshot()
+                # Capture screenshot using adb exec-out screencap
+                img_bytes = self._adb_command_bytes("exec-out", "screencap", "-p")
                 self._screenshot_cache = img_bytes
             except Exception as e:
                 # Retry once
                 try:
                     time.sleep(0.5)
-                    img_bytes = self.device.screenshot()
+                    img_bytes = self._adb_command_bytes("exec-out", "screencap", "-p")
                     self._screenshot_cache = img_bytes
                 except Exception as retry_error:
                     raise ScreenshotError(f"Failed to capture screenshot: {retry_error}")
@@ -270,7 +329,7 @@ class DeviceBridge:
         self._verify_connection()
         
         try:
-            self.device.shell(f"input tap {x} {y}")
+            self._adb_command("shell", "input", "tap", str(x), str(y))
             # Clear screenshot cache after action
             self._screenshot_cache = None
         except Exception as e:
@@ -301,7 +360,7 @@ class DeviceBridge:
         self._verify_connection()
         
         try:
-            self.device.shell(f"input swipe {x1} {y1} {x2} {y2} {duration}")
+            self._adb_command("shell", "input", "swipe", str(x1), str(y1), str(x2), str(y2), str(duration))
             self._screenshot_cache = None
         except Exception as e:
             raise ActionExecutionError(f"Failed to execute swipe: {e}")
@@ -337,7 +396,7 @@ class DeviceBridge:
         try:
             # Escape special characters for shell
             escaped_text = text.replace(" ", "%s").replace("&", "\\&")
-            self.device.shell(f"input text {escaped_text}")
+            self._adb_command("shell", "input", "text", escaped_text)
             self._screenshot_cache = None
         except Exception as e:
             raise ActionExecutionError(f"Failed to type text: {e}")
@@ -365,7 +424,7 @@ class DeviceBridge:
         self._verify_connection()
         
         try:
-            self.device.shell(f"input keyevent {keycode}")
+            self._adb_command("shell", "input", "keyevent", str(keycode))
             self._screenshot_cache = None
         except Exception as e:
             raise ActionExecutionError(f"Failed to press {name}: {e}")
@@ -383,7 +442,8 @@ class DeviceBridge:
         self._verify_connection()
         
         try:
-            self.device.app_start(package_name)
+            # Launch app using monkey command
+            self._adb_command("shell", "monkey", "-p", package_name, "-c", "android.intent.category.LAUNCHER", "1")
             time.sleep(2)  # Wait for app to load
             self._screenshot_cache = None
         except Exception as e:
@@ -399,18 +459,22 @@ class DeviceBridge:
         self._verify_connection()
         
         try:
+            model = self._adb_command("shell", "getprop", "ro.product.model")
+            version = self._adb_command("shell", "getprop", "ro.build.version.release")
+            api_level = self._adb_command("shell", "getprop", "ro.build.version.sdk")
+            
             return {
-                "model": self.device.prop.get("ro.product.model", "Unknown"),
-                "android_version": self.device.prop.get("ro.build.version.release", "Unknown"),
-                "api_level": self.device.prop.get("ro.build.version.sdk", "Unknown"),
-                "serial": self.device.serial,
+                "model": model,
+                "android_version": version,
+                "api_level": api_level,
+                "serial": self.device_serial,
             }
         except Exception:
             return {
                 "model": "Unknown",
                 "android_version": "Unknown",
                 "api_level": "Unknown",
-                "serial": self.device.serial if self.device else "Unknown",
+                "serial": self.device_serial or "Unknown",
             }
     
     def is_app_installed(self, package_name: str) -> bool:
@@ -426,7 +490,7 @@ class DeviceBridge:
         self._verify_connection()
         
         try:
-            output = self.device.shell(f"pm list packages | grep {package_name}")
+            output = self._adb_command("shell", "pm", "list", "packages")
             return package_name in output
         except Exception:
             return False
@@ -441,13 +505,14 @@ class DeviceBridge:
         self._verify_connection()
         
         try:
-            output = self.device.shell("dumpsys window windows | grep mCurrentFocus")
+            output = self._adb_command("shell", "dumpsys", "window", "windows")
             # Parse output like: mCurrentFocus=Window{abc123 u0 com.example.app/com.example.MainActivity}
-            if "/" in output:
-                parts = output.split("/")
-                package = parts[0].split()[-1]
-                activity = parts[1].split("}")[0]
-                return package, activity
+            for line in output.split('\n'):
+                if 'mCurrentFocus' in line and "/" in line:
+                    parts = line.split("/")
+                    package = parts[0].split()[-1]
+                    activity = parts[1].split("}")[0]
+                    return package, activity
             return "Unknown", "Unknown"
         except Exception:
             return "Unknown", "Unknown"
