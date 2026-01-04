@@ -101,18 +101,20 @@ def main():
             
             elif action_type == "tap":
                 coord = action_dict["coordinate"]
-                x = int(coord[0] * device.screen_width)
-                y = int(coord[1] * device.screen_height)
-                print(f"  Tap at ({x}, {y})")
+                # MAI-UI outputs coordinates in 0-1000 range, not 0-1!
+                x = int(coord[0] / 1000 * device.screen_width)
+                y = int(coord[1] / 1000 * device.screen_height)
+                print(f"  Tap at ({x}, {y}) - normalized: [{coord[0]}, {coord[1]}]")
                 device.tap(x, y)
             
             elif action_type == "swipe":
                 start = action_dict["start"]
                 end = action_dict["end"]
-                x1 = int(start[0] * device.screen_width)
-                y1 = int(start[1] * device.screen_height)
-                x2 = int(end[0] * device.screen_width)
-                y2 = int(end[1] * device.screen_height)
+                # MAI-UI outputs coordinates in 0-1000 range
+                x1 = int(start[0] / 1000 * device.screen_width)
+                y1 = int(start[1] / 1000 * device.screen_height)
+                x2 = int(end[0] / 1000 * device.screen_width)
+                y2 = int(end[1] / 1000 * device.screen_height)
                 print(f"  Swipe from ({x1}, {y1}) to ({x2}, {y2})")
                 device.swipe(x1, y1, x2, y2)
             
