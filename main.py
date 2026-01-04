@@ -179,8 +179,18 @@ def main():
 
                 # Try to launch the app
                 try:
-                    device._adb_command("shell", "monkey", "-p", package_name, "1")
+                    # Method 1: Monkey with LAUNCHER category (more stable)
+                    device._adb_command("shell", "monkey", "-p", package_name, "-c", "android.intent.category.LAUNCHER", "1")
                 except Exception as e:
+                    # Method 2: Specific handling for Settings (am start)
+                    if package_name == "com.android.settings":
+                        try:
+                            print(f"  (Monkey failed, trying 'am start' for Settings)")
+                            device._adb_command("shell", "am", "start", "-a", "android.settings.SETTINGS")
+                            continue # Success
+                        except:
+                            pass
+                            
                     print(f"  Warning: Could not launch {app_name} ({package_name}): {e}")
             
             elif action_type == "click":
