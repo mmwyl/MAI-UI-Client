@@ -126,6 +126,10 @@ class DeviceBridge:
 
             # For non-ASCII (e.g. Chinese), use ADB Keyboard broadcast
             try:
+                # Ensure ADB Keyboard is enabled and set as default
+                self._adb_command("shell", "ime", "enable", "com.android.adbkeyboard/.AdbIME")
+                self._adb_command("shell", "ime", "set", "com.android.adbkeyboard/.AdbIME")
+                
                 b64_text = base64.b64encode(text.encode('utf-8')).decode('utf-8')
                 self._adb_command(
                     "shell", "am", "broadcast", "-a", "ADB_INPUT_B64", "--es", "msg", b64_text

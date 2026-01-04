@@ -1,0 +1,22 @@
+settings: com.android.settings
+camera: com.android.camera2
+chrome: com.android.chrome
+clock: com.android.deskclock
+contacts: com.android.contacts
+dialer: com.android.dialer
+files: com.android.documentsui
+gallery: com.android.gallery3d
+messages: com.android.messaging
+phone: com.android.dialer
+calculator: com.android.calculator2
+calendar: com.android.calendar
+maps: com.google.android.apps.maps
+youtube: com.google.android.youtube
+play store: com.android.vending
+photos: com.google.android.apps.photos
+gmail: com.google.android.gm
+douyin: com.ss.android.ugc.aweme
+tiktok: com.zhiliaoapp.musically
+weixin: com.tencent.mm
+wechat: com.tencent.mm
+alipay: com.eg.android.AlipayGphone

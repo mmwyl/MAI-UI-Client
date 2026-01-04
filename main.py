@@ -32,6 +32,29 @@ def setup_logging(debug=False):
     )
 
 
+def load_app_mapping(config_path="app_mapping.yaml"):
+    """Load app name to package mapping from file."""
+    mapping = {}
+    path = Path(config_path)
+    if not path.exists():
+        # Try finding it in the same directory as the script
+        path = Path(__file__).parent / config_path
+    
+    if path.exists():
+        try:
+            with open(path, 'r', encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith('#'):
+                        if ':' in line:
+                            key, value = line.split(':', 1)
+                            mapping[key.strip().lower()] = value.strip()
+            print(f"Loaded {len(mapping)} app mappings from {config_path}")
+        except Exception as e:
+            print(f"Warning: Failed to load app mapping: {e}")
+    return mapping
+
+
 def main():
     parser = argparse.ArgumentParser(description="MAI Phone Agent - Autonomous Android Control")
     parser.add_argument("instruction", help="Task instruction in natural language")
@@ -46,6 +69,9 @@ def main():
     
     setup_logging(args.debug)
     logger = logging.getLogger(__name__)
+    
+    # Load app mapping
+    app_mapping = load_app_mapping()
     
     print(f"🚀 MAI Phone Agent")
     print(f"📱 Device: {args.device_id}")
@@ -95,6 +121,23 @@ def main():
             # Parse action
             action_type = action_dict.get("action", "unknown")
             print(f"Action: {action_type}")
+
+            # Loop Detection: Check if we are repeating the exact same action
+            # (Simple heuristic: same action type and args as previous 3 steps)
+            if step > 3:
+                last_steps = agent.traj_memory.steps[-3:]
+                is_loop = True
+                for s in last_steps:
+                    if s.action != action_dict:
+                        is_loop = False
+                        break
+                
+                if is_loop:
+                    print(f"\n⚠️  Loop Detected: Repeated action '{action_type}' 3 times.")
+                    print(f"   forcing a wait to break potential race conditions...")
+                    import time
+                    time.sleep(2)
+                    # We could also choose to terminate or inject a 'back' button here
             
             if action_type == "terminate":
                 status = action_dict.get("status", "success")
@@ -105,13 +148,40 @@ def main():
             elif action_type == "open":
                 app_name = action_dict.get("text", "")
                 print(f"  Opening app: {app_name}")
+                
+                # 1. Try loaded mapping
+                package_name = app_mapping.get(app_name.lower())
+                
+                if not package_name:
+                    # Fallback 1: Try straightforward patterns
+                    candidates = [
+                        f"com.android.{app_name.lower()}",
+                        f"com.google.android.{app_name.lower()}"
+                    ]
+                    
+                    # Fallback 2: Search installed packages
+                    try:
+                        output = device._adb_command("shell", "pm", "list", "packages")
+                        # output format: package:com.example.app
+                        installed_packages = [line.replace("package:", "").strip() for line in output.splitlines()]
+                        
+                        # Search for app_name in package names
+                        matches = [p for p in installed_packages if app_name.lower() in p.lower()]
+                        if matches:
+                            matches.sort(key=len)
+                            package_name = matches[0]
+                            print(f"  (Found package via search: {package_name})")
+                        else:
+                            package_name = candidates[0]
+                    except Exception as e:
+                        print(f"  Warning: Package search failed ({e}), using default pattern.")
+                        package_name = candidates[0]
+
                 # Try to launch the app
-                # For simplicity, we'll use the package name mapping
-                # You might need to add a proper app name to package mapping
                 try:
-                    device._adb_command("shell", "monkey", "-p", f"com.android.{app_name.lower()}", "1")
-                except:
-                    print(f"  Warning: Could not launch {app_name}, trying generic launch...")
+                    device._adb_command("shell", "monkey", "-p", package_name, "1")
+                except Exception as e:
+                    print(f"  Warning: Could not launch {app_name} ({package_name}): {e}")
             
             elif action_type == "click":
                 coord = action_dict["coordinate"]
