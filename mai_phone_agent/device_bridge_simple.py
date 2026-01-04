@@ -96,10 +96,53 @@ class DeviceBridge:
         """Long press."""
         self.swipe(x, y, x, y, duration)
     
+    def is_app_installed(self, package_name: str) -> bool:
+        """Check if an app is installed."""
+        try:
+            output = self._adb_command("shell", "pm", "list", "packages", package_name)
+            return f"package:{package_name}" in output
+        except:
+            return False
+
     def type_text(self, text: str) -> None:
-        """Type text."""
-        escaped = text.replace(" ", "%s").replace("&", "\\&")
-        self._adb_command("shell", "input", "text", escaped)
+        """Type text on the device."""
+        if not text:
+            return
+
+        import base64
+
+        # Check for non-ASCII characters
+        is_ascii = all(ord(c) < 128 for c in text)
+
+        if not is_ascii:
+            # Check if ADB Keyboard is installed
+            if not self.is_app_installed("com.android.adbkeyboard"):
+                print(f"\n⚠️  Input Warning: Cannot type non-ASCII text '{text}'")
+                print(f"   Reason: 'ADB Keyboard' app is not installed on the device.")
+                print(f"   Solution: Please install ADBKeyBoard.apk to support Chinese input.")
+                print(f"   Download: https://github.com/senzhk/ADBKeyBoard")
+                print(f"   Command: adb install ADBKeyBoard.apk\n")
+                return
+
+            # For non-ASCII (e.g. Chinese), use ADB Keyboard broadcast
+            try:
+                b64_text = base64.b64encode(text.encode('utf-8')).decode('utf-8')
+                self._adb_command(
+                    "shell", "am", "broadcast", "-a", "ADB_INPUT_B64", "--es", "msg", b64_text
+                )
+                print(f"  (Sent non-ASCII text via ADB Keyboard broadcast: {text})")
+                return
+            except Exception as e:
+                print(f"  Warning: Failed to send non-ASCII text via broadcast: {e}")
+                return
+                
+        # For ASCII or fallback
+        # Escape special characters for shell
+        escaped = text.replace(" ", "%s").replace("'", r"\'").replace('"', r'\"').replace("(", r"\(").replace(")", r"\)").replace("&", r"\&")
+        try:
+            self._adb_command("shell", "input", "text", escaped)
+        except Exception as e:
+            print(f"  Error typing text: {e}")
     
     def press_back(self) -> None:
         """Press back button."""
