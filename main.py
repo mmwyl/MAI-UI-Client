@@ -12,13 +12,14 @@ Usage:
 import argparse
 import logging
 import sys
+import os
 from pathlib import Path
 
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent))
+# Add src directory to path
+sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from mai_phone_agent.device_bridge_simple import DeviceBridge
-from src.mai_naivigation_agent import MAIUINaivigationAgent
+from mai_naivigation_agent import MAIUINaivigationAgent
 
 
 def setup_logging(debug=False):
