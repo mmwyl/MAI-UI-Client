@@ -136,7 +136,8 @@ def main():
                     center_y = int(coord[1] * device.screen_height)
                     
                     # Calculate swipe start and end based on direction
-                    swipe_distance = min(device.screen_width, device.screen_height) // 3
+                    # Increase distance to 1/2 screen to ensure scroll/drawer open works
+                    swipe_distance = min(device.screen_width, device.screen_height) // 2
                     
                     if direction == "up":
                         x1, y1 = center_x, center_y + swipe_distance // 2
