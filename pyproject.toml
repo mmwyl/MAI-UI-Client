@@ -1,0 +1,59 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mai-ui"
+version = "0.1.0"
+description = "MAI-UI: Real-World Centric Foundation GUI Agents with Phone Agent Framework"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "Apache-2.0"}
+authors = [
+    {name = "Alibaba Cloud - Tongyi MAI Team", email = "yue.w@alibaba-inc.com"}
+]
+keywords = ["AI", "GUI", "agent", "mobile", "automation", "android"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+dependencies = [
+    "Jinja2>=3.1.0",
+    "numpy>=2.0.0",
+    "openai>=1.0.0",
+    "Pillow>=10.0.0",
+    "adbutils>=2.3.0",
+    "click>=8.0.0",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/Tongyi-MAI/MAI-UI"
+Documentation = "https://tongyi-mai.github.io/MAI-UI/"
+Repository = "https://github.com/Tongyi-MAI/MAI-UI"
+"Bug Reports" = "https://github.com/Tongyi-MAI/MAI-UI/issues"
+
+[project.scripts]
+mai-phone = "phone_agent.cli:main"
+
+[tool.setuptools]
+packages = ["src", "phone_agent"]
+
+[tool.setuptools.package-data]
+"*" = ["*.yaml", "*.yml", "*.json"]
