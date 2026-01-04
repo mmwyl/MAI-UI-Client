@@ -122,21 +122,81 @@ def main():
                 device.tap(x, y)
             
             elif action_type == "swipe":
-                start = action_dict["start"]
-                end = action_dict["end"]
-                # MAI-UI agent already normalizes coordinates to [0, 1] range
-                x1 = int(start[0] * device.screen_width)
-                y1 = int(start[1] * device.screen_height)
-                x2 = int(end[0] * device.screen_width)
-                y2 = int(end[1] * device.screen_height)
-                print(f"  Swipe from ({x1}, {y1}) to ({x2}, {y2})")
-                device.swipe(x1, y1, x2, y2)
+                # Swipe has two formats:
+                # 1. Direction-based: {"action": "swipe", "direction": "up/down/left/right", "coordinate": [x, y]}
+                # 2. Coordinate-based: {"action": "swipe", "start": [x1, y1], "end": [x2, y2]}
+                
+                if "direction" in action_dict:
+                    # Direction-based swipe
+                    direction = action_dict["direction"]
+                    coord = action_dict.get("coordinate", [0.5, 0.5])  # Default to center
+                    
+                    # Convert coordinate to pixels
+                    center_x = int(coord[0] * device.screen_width)
+                    center_y = int(coord[1] * device.screen_height)
+                    
+                    # Calculate swipe start and end based on direction
+                    swipe_distance = min(device.screen_width, device.screen_height) // 3
+                    
+                    if direction == "up":
+                        x1, y1 = center_x, center_y + swipe_distance // 2
+                        x2, y2 = center_x, center_y - swipe_distance // 2
+                    elif direction == "down":
+                        x1, y1 = center_x, center_y - swipe_distance // 2
+                        x2, y2 = center_x, center_y + swipe_distance // 2
+                    elif direction == "left":
+                        x1, y1 = center_x + swipe_distance // 2, center_y
+                        x2, y2 = center_x - swipe_distance // 2, center_y
+                    elif direction == "right":
+                        x1, y1 = center_x - swipe_distance // 2, center_y
+                        x2, y2 = center_x + swipe_distance // 2, center_y
+                    else:
+                        print(f"  Unknown swipe direction: {direction}")
+                        continue
+                    
+                    print(f"  Swipe {direction} from ({x1}, {y1}) to ({x2}, {y2})")
+                    device.swipe(x1, y1, x2, y2)
+                    
+                elif "start" in action_dict and "end" in action_dict:
+                    # Coordinate-based swipe
+                    start = action_dict["start"]
+                    end = action_dict["end"]
+                    # MAI-UI agent already normalizes coordinates to [0, 1] range
+                    x1 = int(start[0] * device.screen_width)
+                    y1 = int(start[1] * device.screen_height)
+                    x2 = int(end[0] * device.screen_width)
+                    y2 = int(end[1] * device.screen_height)
+                    print(f"  Swipe from ({x1}, {y1}) to ({x2}, {y2})")
+                    device.swipe(x1, y1, x2, y2)
+                else:
+                    print(f"  Invalid swipe action: missing direction or start/end coordinates")
+
             
             elif action_type == "type":
                 text = action_dict["text"]
                 print(f"  Type: {text}")
                 device.type_text(text)
             
+            elif action_type == "long_press":
+                coord = action_dict["coordinate"]
+                # Normalization 0-1 -> pixels
+                x = int(coord[0] * device.screen_width)
+                y = int(coord[1] * device.screen_height)
+                print(f"  Long press at ({x}, {y})")
+                device.long_press(x, y)
+
+            elif action_type == "drag":
+                start = action_dict["start_coordinate"]
+                end = action_dict["end_coordinate"]
+                # Normalization 0-1 -> pixels
+                x1 = int(start[0] * device.screen_width)
+                y1 = int(start[1] * device.screen_height)
+                x2 = int(end[0] * device.screen_width)
+                y2 = int(end[1] * device.screen_height)
+                print(f"  Drag from ({x1}, {y1}) to ({x2}, {y2})")
+                # Drag is essentially a slow swipe
+                device.swipe(x1, y1, x2, y2, duration=1000)
+
             elif action_type == "system_button":
                 button = action_dict.get("button", "back")
                 print(f"  Press {button} button")
@@ -146,6 +206,8 @@ def main():
                     device.press_home()
                 elif button == "menu" or button == "recent":
                     device.press_recent()
+                elif button == "enter":
+                    device._adb_command("shell", "input", "keyevent", "66") # KEYCODE_ENTER
             
             elif action_type == "wait":
                 print("  Waiting...")
