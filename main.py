@@ -150,6 +150,12 @@ def main():
                 import time
                 time.sleep(1)
             
+            elif action_type == "answer":
+                text = action_dict.get("text", "")
+                print(f"  Agent answer: {text}")
+                # Answer usually means task is complete
+                done = True
+            
             else:
                 print(f"  Unknown action: {action_type}")
             
