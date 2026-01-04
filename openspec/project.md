@@ -87,9 +87,24 @@ MAI-UI is a family of foundation GUI agents designed to revolutionize human-comp
 
 ## Domain Context
 
+### MAI Phone Agent Framework
+- **Core Components:**
+  - `main.py`: Lightweight CLI for autonomous Android control (Open-AutoGLM style)
+  - `device_bridge.py` / `device_bridge_simple.py`: ADB wrapper using `subprocess` for maximum compatibility (WiFi/USB)
+  - `mai_naivigation_agent.py`: Agent logic with coordinate normalization handling
+- **Capabilities:**
+  - **Full Action Space:** `click`, `long_press`, `swipe` (direction/coordinate), `drag`, `type` (UTF-8 support), `system_button` (home/back/menu/enter), `open`, `answer`, `terminate`, `wait`
+  - **Robustness:** ADB Keyboard broadcast fallback for Chinese input, app installation checks, improved gesture parameters
+  - **Compatibility:** Local vLLM (`EMPTY` api_key) and OpenAI-compatible services (`--apikey` support)
+
 ### GUI Agent Fundamentals
 - **GUI Grounding:** Locating UI elements from natural language descriptions
-- **Action Space:** Tap, swipe, long press, type, back, home, and tool calls (`ask_user`, `mcp_call`)
+- **Action Space:**
+  - **Touch:** `click` (tap), `long_press`, `drag`
+  - **Gesture:** `swipe` (supports `direction="up/down..."` or `start/end` coordinates)
+  - **Input:** `type` (text input with Unicode support via ADB Keyboard broadcast)
+  - **System:** `system_button` (back, home, menu, enter), `open` (launch app), `terminate`, `wait`
+  - **Interaction:** `answer` (chat response), `ask_user`
 - **Observation:** Screenshots (PIL Images or bytes), optional XML accessibility trees
 - **Multi-Step Navigation:** Chained actions to complete complex user goals
 
@@ -104,18 +119,20 @@ MAI-UI is a family of foundation GUI agents designed to revolutionize human-comp
 - Screenshot history for visual context
 
 ### Coordinate Systems
-- Model outputs normalized coordinates [0, 999]
-- Divided by `SCALE_FACTOR` to get [0, 1] range
+- Model outputs normalized coordinates [0, 999] in internal logic
+- **Agent Normalization:** `mai_naivigation_agent` normalizes 0-999 -> [0, 1] before passing to executor
+- **Executor Execution:** `main.py` maps [0, 1] -> [0, screen_pixel] for device actions
 - Supports both percentage and pixel-based positioning
 
 ## Important Constraints
 
 ### Technical Constraints
-- **Model Serving:** Requires vLLM-compatible OpenAI API endpoint
+- **Model Serving:** Requires vLLM-compatible OpenAI API endpoint or standard OpenAI API
 - **Memory:** Large context lengths for multi-turn scenarios (RL optimization)
 - **GPU Requirements:** Tensor parallelism for larger models (8B+)
 - **Image Processing:** Screenshots must be PIL Images or bytes
 - **Response Format:** Strict XML tag parsing (`<thinking>`, `<tool_call>`)
+- **Android Input:** Native `input text` limited to ASCII; `ADBKeyBoard` required for robust Chinese/Unicode input
 
 ### Business Constraints
 - **Real-World Deployment:** Focus on practical, deployable agents
