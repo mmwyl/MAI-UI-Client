@@ -167,6 +167,7 @@ class MAIUINaivigationAgent(BaseAgent):
         self,
         llm_base_url: str,
         model_name: str,
+        api_key: Optional[str] = None,
         runtime_conf: Optional[Dict[str, Any]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
     ):
@@ -176,6 +177,9 @@ class MAIUINaivigationAgent(BaseAgent):
         Args:
             llm_base_url: Base URL for the LLM API endpoint.
             model_name: Name of the model to use.
+            api_key: API key for model authentication. 
+                     If None, uses "EMPTY" for local vLLM servers.
+                     For OpenAI-compatible APIs, provide your actual API key.
             runtime_conf: Optional configuration dictionary with keys:
                 - history_n: Number of history images to include (default: 3)
                 - max_pixels: Maximum pixels for image processing
@@ -204,9 +208,13 @@ class MAIUINaivigationAgent(BaseAgent):
 
         self.llm_base_url = llm_base_url
         self.model_name = model_name
+        
+        # Use "EMPTY" as default for local vLLM servers if no API key provided
+        effective_api_key = api_key if api_key is not None else "EMPTY"
+        
         self.llm = OpenAI(
             base_url=self.llm_base_url,
-            api_key="empty",
+            api_key=effective_api_key,
         )
 
         # Extract frequently used config values
