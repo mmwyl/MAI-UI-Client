@@ -21,8 +21,8 @@ import logging
 from typing import Dict, Any, Tuple, Optional
 from PIL import Image
 
-from phone_agent.device_bridge import DeviceBridge
-from phone_agent.utils import (
+from mai_phone_agent.device_bridge import DeviceBridge
+from mai_phone_agent.utils import (
     parse_tagged_text,
     normalize_coordinate,
     validate_action,

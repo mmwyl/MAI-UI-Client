@@ -22,10 +22,10 @@ __version__ = "0.1.0"
 __author__ = "Alibaba Cloud - Tongyi MAI Team"
 __license__ = "Apache-2.0"
 
-from phone_agent.device_bridge import DeviceBridge
-from phone_agent.executor import TaskExecutor
-from phone_agent.integration import AgentIntegration
-from phone_agent.config import Config
+from mai_phone_agent.device_bridge import DeviceBridge
+from mai_phone_agent.executor import TaskExecutor
+from mai_phone_agent.integration import AgentIntegration
+from mai_phone_agent.config import Config
 
 __all__ = [
     "DeviceBridge",

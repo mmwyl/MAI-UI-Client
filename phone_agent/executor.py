@@ -26,10 +26,10 @@ from pathlib import Path
 from typing import Dict, Any, Optional, List, Callable
 from dataclasses import dataclass, asdict
 
-from phone_agent.device_bridge import DeviceBridge
-from phone_agent.integration import AgentIntegration, ActionParseError, ActionValidationError
-from phone_agent.config import Config
-from phone_agent.utils import pil_to_base64, truncate_text
+from mai_phone_agent.device_bridge import DeviceBridge
+from mai_phone_agent.integration import AgentIntegration, ActionParseError, ActionValidationError
+from mai_phone_agent.config import Config
+from mai_phone_agent.utils import pil_to_base64, truncate_text
 
 
 logger = logging.getLogger(__name__)

@@ -20,11 +20,11 @@ from typing import Optional
 
 import click
 
-from phone_agent import __version__
-from phone_agent.config import Config, create_default_config, DEFAULT_CONFIG_FILE
-from phone_agent.device_bridge import DeviceBridge, DeviceNotFoundError
-from phone_agent.integration import AgentIntegration
-from phone_agent.executor import TaskExecutor
+from mai_phone_agent import __version__
+from mai_phone_agent.config import Config, create_default_config, DEFAULT_CONFIG_FILE
+from mai_phone_agent.device_bridge import DeviceBridge, DeviceNotFoundError
+from mai_phone_agent.integration import AgentIntegration
+from mai_phone_agent.executor import TaskExecutor
 
 
 # Configure logging
