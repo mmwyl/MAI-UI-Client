@@ -19,8 +19,11 @@ class DeviceBridge:
         self.screen_width = 0
         self.screen_height = 0
         
-        # Get screen size
-        self.screen_width, self.screen_height = self.get_screen_size()
+        try:
+            self.screen_width, self.screen_height = self.get_screen_size()
+        except Exception as e:
+            print(f"Warning: Failed to get screen size via ADB: {e}")
+            self.screen_width, self.screen_height = 0, 0
     
     def _adb_command(self, *args) -> str:
         """Execute ADB command and return output."""
@@ -31,6 +34,10 @@ class DeviceBridge:
         
         result = subprocess.run(cmd, capture_output=True, text=True)
         if result.returncode != 0:
+            # Don't raise immediately, let caller handle or check stderr
+            # But for compatibility with existing code, we might want to raise
+            # unless it's a known non-critical error.
+            # For now, we'll keep raising but maybe log it.
             raise Exception(f"ADB command failed: {result.stderr}")
         return result.stdout.strip()
     
@@ -43,7 +50,7 @@ class DeviceBridge:
         
         result = subprocess.run(cmd, capture_output=True)
         if result.returncode != 0:
-            raise Exception(f"ADB command failed: {result.stderr.decode()}")
+             raise Exception(f"ADB command failed: {result.stderr.decode()}")
         return result.stdout
     
     def list_devices(self) -> List[Dict[str, str]]:
@@ -66,11 +73,16 @@ class DeviceBridge:
     
     def get_screen_size(self) -> Tuple[int, int]:
         """Get screen dimensions."""
-        output = self._adb_command("shell", "wm", "size")
-        # Output: "Physical size: 1080x1920"
-        size_str = output.split(":")[-1].strip()
-        width, height = map(int, size_str.split("x"))
-        return width, height
+        try:
+            output = self._adb_command("shell", "wm", "size")
+            # Output: "Physical size: 1080x1920"
+            if "Physical size:" in output:
+                size_str = output.split(":")[-1].strip()
+                width, height = map(int, size_str.split("x"))
+                return width, height
+        except:
+            pass
+        raise Exception("Could not parse screen size")
     
     def capture_screenshot(self, format: str = "pil") -> Any:
         """Capture screenshot."""
@@ -79,7 +91,11 @@ class DeviceBridge:
         if format == "bytes":
             return img_bytes
         elif format == "pil":
-            return Image.open(io.BytesIO(img_bytes))
+            image = Image.open(io.BytesIO(img_bytes))
+            # Update screen size from screenshot if not set
+            if self.screen_width == 0:
+                self.screen_width, self.screen_height = image.size
+            return image
         else:
             raise ValueError(f"Invalid format: {format}")
     
