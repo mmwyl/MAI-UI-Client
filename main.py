@@ -13,6 +13,8 @@ import argparse
 import logging
 import sys
 import os
+import json
+from datetime import datetime
 from pathlib import Path
 
 # Add src directory to path
@@ -64,6 +66,8 @@ def main():
     parser.add_argument("--apikey", default=None, help="API key for model authentication (optional, defaults to EMPTY for local vLLM)")
     parser.add_argument("--max-steps", type=int, default=50, help="Maximum steps")
     parser.add_argument("--debug", action="store_true", help="Enable debug logging")
+    parser.add_argument("--save-logs", action="store_true", default=True, help="Save execution logs and screenshots (default: True)")
+    parser.add_argument("--log-dir", default="logs", help="Directory to save logs (default: logs)")
     
     args = parser.parse_args()
     
@@ -72,6 +76,27 @@ def main():
     
     # Load app mapping
     app_mapping = load_app_mapping()
+    
+    # 创建日志目录（用于复盘分析）
+    log_session_dir = None
+    execution_log = []
+    if args.save_logs:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        log_session_dir = Path(args.log_dir) / f"session_{timestamp}"
+        log_session_dir.mkdir(parents=True, exist_ok=True)
+        print(f"📂 Logs will be saved to: {log_session_dir}\n")
+        
+        # 保存任务信息
+        task_info = {
+            "timestamp": timestamp,
+            "instruction": args.instruction,
+            "device_id": args.device_id,
+            "model": args.model,
+            "base_url": args.base_url,
+            "max_steps": args.max_steps
+        }
+        with open(log_session_dir / "task_info.json", "w", encoding="utf-8") as f:
+            json.dump(task_info, f, ensure_ascii=False, indent=2)
     
     print(f"🚀 MAI Phone Agent")
     print(f"📱 Device: {args.device_id}")
@@ -115,12 +140,30 @@ def main():
             screenshot = device.capture_screenshot(format="pil")
             obs = {"screenshot": screenshot}
             
+            # 保存截图（用于复盘）
+            if log_session_dir:
+                screenshot.save(log_session_dir / f"step_{step:03d}_screenshot.png")
+            
             # Get prediction
             prediction_text, action_dict = agent.predict(args.instruction, obs)
             
             # Parse action
             action_type = action_dict.get("action", "unknown")
             print(f"Action: {action_type}")
+            
+            # 记录详细日志（包括thinking过程）
+            if log_session_dir:
+                step_log = {
+                    "step": step,
+                    "action": action_dict,
+                    "raw_prediction": prediction_text,
+                    "screenshot_file": f"step_{step:03d}_screenshot.png"
+                }
+                execution_log.append(step_log)
+                
+                # 实时保存每一步的详细日志
+                with open(log_session_dir / f"step_{step:03d}_log.json", "w", encoding="utf-8") as f:
+                    json.dump(step_log, f, ensure_ascii=False, indent=2)
 
             # Loop Detection: Check if we are repeating the exact same action
             # (Simple heuristic: same action type and args as previous 3 steps)
@@ -310,6 +353,12 @@ def main():
         
         if not done:
             print(f"\n⏱️  Reached max steps ({args.max_steps})")
+        
+        # 保存完整执行日志
+        if log_session_dir:
+            with open(log_session_dir / "execution_log.json", "w", encoding="utf-8") as f:
+                json.dump(execution_log, f, ensure_ascii=False, indent=2)
+            print(f"\n📝 Logs saved to: {log_session_dir}")
         
         print(f"\n✅ Execution completed in {step} steps")
         

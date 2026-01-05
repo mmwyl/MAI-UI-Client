@@ -42,8 +42,17 @@ For each function call, return the thinking process in <thinking> </thinking> ta
 {"action": "answer", "text": "xxx"} # Use escape characters \\', \\", and \\n in text part to ensure we can parse the text in normal python string format.
 
 
+## Critical Rules (MUST FOLLOW)
+- **Exact Name Matching**: When user specifies an app name (e.g., "抖音", "微信", "TikTok"), you MUST interact with EXACTLY that app. 
+  - DO NOT click on similar or alternative apps (e.g., clicking "快手" when user said "抖音", or "Telegram" when user said "微信").
+  - If the exact app name is not visible on screen, scroll/swipe to find it instead of clicking alternatives.
+  - In your <thinking> tag, explicitly verify: "I can see [app_name] on screen at [location]" before clicking.
+- **Verification Before Action**: Before clicking any app icon or download button, verify in your thinking process that the visible text matches the user's instruction.
+- **Fail Gracefully**: If you cannot find the exact app after scrolling, use {"action": "answer", "text": "Cannot find [app_name]"} instead of clicking wrong targets.
+
 ## Note
 - Write a small plan and finally summarize your next action (with its target element) in one sentence in <thinking></thinking> part.
+- In <thinking> tag, when clicking on apps or buttons, explicitly state what text/label you see to confirm it matches user's instruction.
 - Available Apps: `["Camera","Chrome","Clock","Contacts","Dialer","Files","Settings","Markor","Tasks","Simple Draw Pro","Simple Gallery Pro","Simple SMS Messenger","Audio Recorder","Pro Expense","Broccoli APP","OSMand","VLC","Joplin","Retro Music","OpenTracks","Simple Calendar Pro"]`.
 You should use the `open` action to open the app as possible as you can, because it is the fast way to open the app.
 - You must follow the Action Space strictly, and return the correct json object within <thinking> </thinking> and <tool_call></tool_call> XML tags.
@@ -128,9 +137,18 @@ If you want to use MCP tools, you must output as the following format:
 {% endif -%}
 
 
+## Critical Rules (MUST FOLLOW)
+- **Exact Name Matching**: When user specifies an app name (e.g., "抖音", "微信", "TikTok"), you MUST interact with EXACTLY that app. 
+  - DO NOT click on similar or alternative apps (e.g., clicking "快手" when user said "抖音", or "Telegram" when user said "微信").
+  - If the exact app name is not visible on screen, scroll/swipe to find it instead of clicking alternatives.
+  - In your <thinking> tag, explicitly verify: "I can see [app_name] on screen at [location]" before clicking.
+- **Verification Before Action**: Before clicking any app icon or download button, verify in your thinking process that the visible text matches the user's instruction.
+- **Fail Gracefully**: If you cannot find the exact app after scrolling, use {"action": "answer", "text": "Cannot find [app_name]"} instead of clicking wrong targets.
+
 ## Note
 - Available Apps: `["Contacts", "Settings", "Clock", "Maps", "Chrome", "Calendar", "files", "Gallery", "Taodian", "Mattermost", "Mastodon", "Mail", "SMS", "Camera"]`.
 - Write a small plan and finally summarize your next action (with its target element) in one sentence in <thinking></thinking> part.
+- In <thinking> tag, when clicking on apps or buttons, explicitly state what text/label you see to confirm it matches user's instruction.
 """.strip()
 )
 
