@@ -255,94 +255,61 @@ agent = MAIUINaivigationAgent(
 The Phone Agent Framework enables you to control Android devices with natural language commands using MAI-UI models. Execute multi-step tasks autonomously with a simple command-line interface.
 
 ### Quick Start
+#### 1. Requirements
+- Python 3.10+
+- ADB installed and accessible in path (`adb` command)
+- **(Recommended)** Install [ADBKeyBoard](https://github.com/senzhk/ADBKeyBoard) for reliable Chinese/Unicode input support:
+  ```bash
+  adb install ADBKeyBoard.apk
+  adb shell ime set com.android.adbkeyboard/.AdbIME
+  ```
 
-#### 1. Install Phone Agent
+#### 2. Run the Agent
+Use the `main.py` script to execute tasks directly:
 
 ```bash
-# Install with Phone Agent dependencies
-pip install -e .
+# Basic usage (local vLLM)
+python main.py --device-id <DEVICE_SERIAL> "open settings and check battery"
+
+# With specific model and base URL
+python main.py \
+  --device-id 192.168.1.100:5555 \
+  --base-url http://localhost:8000/v1 \
+  --model "MAI-UI-8B" \
+  "open Douyin and search for trending videos"
 ```
 
-#### 2. Connect Android Device
+### CLI Arguments (`python main.py`)
+
+| Argument | Description | Default |
+|----------|-------------|---------|
+| `instruction` | Natural language task description | (Required) |
+| `--device-id` | Device serial (USB ID or IP:PORT) | (Required) |
+| `--base-url` | LLM API base URL | `http://localhost:8000/v1` |
+| `--model` | Model name to invoke | `MAI-UI-8B` |
+| `--apikey` | API key for authentication | `None` (for local vLLM) |
+| `--max-steps` | Maximum execution steps | `50` |
+| `--debug` | Enable verbose logging | `False` |
+
+#### Using Cloud Models (e.g. Qwen, GPT-4)
+You can use any OpenAI-compatible API provider:
 
 ```bash
-# Enable USB debugging on your Android device
-# Connect via USB cable
-
-# Verify connection
-mai-phone devices
-```
-
-#### 3. Run Your First Task
-
-```bash
-# Simple one-command execution
-mai-phone "open settings and enable WiFi"
-
-# More complex tasks
-mai-phone "open Xiaohongshu and search for nearby coffee shops"
-mai-phone "book a train ticket to Shanghai"
-```
-
-### CLI Commands
-
-```bash
-# Execute a task
-mai-phone "your natural language instruction"
-mai-phone run "your instruction"  # explicit run command
-
-# List connected devices
-mai-phone devices
-
-# Configuration management
-mai-phone config show          # View current config
-mai-phone config init          # Create default config file
-
-# System diagnostics
-mai-phone doctor               # Check setup and diagnose issues
-
-# Replay saved trajectories
-mai-phone replay ~/.mai-phone/logs/task_xxx/trajectory.json
-
-# Get help
-mai-phone --help
+python main.py \
+  --device-id <DEVICE_ID> \
+  --base-url https://dashscope.aliyuncs.com/compatible-mode/v1 \
+  --apikey sk-xxxxxxxx \
+  --model qwen-max \
+  "help me book a flight to Beijing tomorrow"
 ```
 
 ### Configuration
-
-Create a configuration file at `~/.mai-phone/config.yaml`:
-
-```yaml
-model:
-  base_url: "http://localhost:8000/v1"
-  name: "MAI-UI-8B"
-  temperature: 0.0
-  history_n: 3
-
-device:
-  serial: null  # auto-detect if not specified
-  adb_server: "127.0.0.1:5037"
-
-execution:
-  max_steps: 50
-  screenshot_delay: 0.5  # seconds between actions
-  retry_attempts: 3
-
-logging:
-  level: "INFO"
-  save_trajectory: true
-  output_dir: "~/.mai-phone/logs"
-```
-
-Or use CLI flags to override:
-
-```bash
-mai-phone --model-url http://192.168.1.100:8000/v1 \
-          --device-serial ABC123 \
-          --max-steps 30 \
-          --debug \
-          "your task"
-```
+- **App Mapping:** You can define custom app name mappings in `app_mapping.yaml` in the running directory:
+  ```yaml
+  settings: com.android.settings
+  douyin: com.ss.android.ugc.aweme
+  ```
+  The agent will automatically load this to resolve app names in `open` commands.
 
 ### Programmatic Usage
 

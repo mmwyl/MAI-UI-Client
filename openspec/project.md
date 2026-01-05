@@ -89,13 +89,17 @@ MAI-UI is a family of foundation GUI agents designed to revolutionize human-comp
 
 ### MAI Phone Agent Framework
 - **Core Components:**
-  - `main.py`: Lightweight CLI for autonomous Android control (Open-AutoGLM style)
-  - `device_bridge.py` / `device_bridge_simple.py`: ADB wrapper using `subprocess` for maximum compatibility (WiFi/USB)
-  - `mai_naivigation_agent.py`: Agent logic with coordinate normalization handling
+  - `main.py`: Primary CLI entry point for autonomous Android control. Supports `--device-id`, `--base-url`, `--apikey`, and model selection.
+  - `device_bridge_simple.py`: Robust ADB wrapper using `subprocess`. Handles device connection, screenshots, and input methods (including ADB Keyboard).
+  - `mai_naivigation_agent.py`: Core agent logic encapsulating the VLM interaction and coordinate normalization.
+  - `app_mapping.yaml`: User-configurable file for mapping natural language app names to Android package names.
 - **Capabilities:**
   - **Full Action Space:** `click`, `long_press`, `swipe` (direction/coordinate), `drag`, `type` (UTF-8 support), `system_button` (home/back/menu/enter), `open`, `answer`, `terminate`, `wait`
-  - **Robustness:** ADB Keyboard broadcast fallback for Chinese input, app installation checks, improved gesture parameters
-  - **Compatibility:** Local vLLM (`EMPTY` api_key) and OpenAI-compatible services (`--apikey` support)
+  - **Robustness:** 
+    - Automatic ADB Keyboard switching for reliable Chinese input.
+    - Infinite loop detection and prevention mechanics.
+    - Intelligent `open` action with mapping lookup, fuzzy search, and `am start` fallback for system apps like Settings.
+  - **Compatibility:** Local vLLM (`EMPTY` api_key) and OpenAI-compatible services (e.g., Qwen, GPT-4).
 
 ### GUI Agent Fundamentals
 - **GUI Grounding:** Locating UI elements from natural language descriptions
