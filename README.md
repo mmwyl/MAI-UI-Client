@@ -290,52 +290,6 @@ python main.py \
 | `--apikey` | API key for authentication | `None` (for local vLLM) |
 | `--max-steps` | Maximum execution steps | `50` |
 | `--debug` | Enable verbose logging | `False` |
-| `--save-logs` | Save execution logs and screenshots | `True` |
-| `--log-dir` | Directory to save logs | `logs` |
-
-### Execution Logs and Replay Analysis
-
-The agent automatically saves detailed execution logs for post-mortem analysis:
-
-**Saved Information:**
-- 📸 **Screenshots**: Each step's screen state (`step_XXX_screenshot.png`)
-- 🧠 **Thinking Process**: Model's reasoning in `<thinking>` tags
-- 🎯 **Actions**: All executed actions with parameters
-- 📋 **Task Info**: Original instruction, model, device info
-
-**Log Structure:**
-```
-logs/
-└── session_20260105_195230/
-    ├── task_info.json          # Task metadata
-    ├── execution_log.json      # Complete execution log
-    ├── step_001_screenshot.png # Step 1 screenshot
-    ├── step_001_log.json       # Step 1 detailed log
-    ├── step_002_screenshot.png
-    ├── step_002_log.json
-    └── ...
-```
-
-**Analyze Logs:**
-Use the provided analysis tool to review execution:
-
-```bash
-# Analyze a session
-python analyze_logs.py logs/session_20260105_195230
-
-# Output includes:
-# - Task information
-# - Step-by-step breakdown with thinking process
-# - Action statistics
-# - Screenshot references
-```
-
-This is especially useful for:
-- 🔍 **Debugging**: Understanding why the agent made certain decisions
-- 📊 **Performance Analysis**: Identifying bottlenecks or repeated actions
-- 🎓 **Training**: Collecting failure cases for model improvement
-- ✅ **Verification**: Confirming the agent followed instructions correctly
-
 
 #### Using Cloud Models (e.g. Qwen, GPT-4)
 You can use any OpenAI-compatible API provider:
