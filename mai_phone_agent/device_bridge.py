@@ -381,64 +381,25 @@ class DeviceBridge:
         # Long press is implemented as swipe with same start/end coordinates
         self.swipe(x, y, x, y, duration)
     
-    def type_text(self, text: str) -> tuple:
+    def type_text(self, text: str) -> None:
         """
         Type text into focused input field.
-        
-        For non-ASCII text (like Chinese), uses ADB Keyboard if installed.
         
         Args:
             text: Text to type.
             
-        Returns:
-            tuple: (success: bool, error_message: str)
+        Raises:
+            ActionExecutionError: If text input fails.
         """
-        if not text:
-            return True, ""
-        
         self._verify_connection()
         
-        import base64
-        
-        # Check for non-ASCII characters
-        is_ascii = all(ord(c) < 128 for c in text)
-        
-        if not is_ascii:
-            # Check if ADB Keyboard is installed
-            if not self.is_app_installed("com.android.adbkeyboard"):
-                error_msg = (
-                    f"Cannot type non-ASCII text '{text}': "
-                    f"ADBKeyBoard is not installed. "
-                    f"Please install from https://github.com/senzhk/ADBKeyBoard"
-                )
-                return False, error_msg
-            
-            # For non-ASCII (e.g. Chinese), use ADB Keyboard broadcast
-            try:
-                # Ensure ADB Keyboard is enabled and set as default
-                self._adb_command("shell", "ime", "enable", "com.android.adbkeyboard/.AdbIME")
-                self._adb_command("shell", "ime", "set", "com.android.adbkeyboard/.AdbIME")
-                
-                b64_text = base64.b64encode(text.encode('utf-8')).decode('utf-8')
-                self._adb_command(
-                    "shell", "am", "broadcast", "-a", "ADB_INPUT_B64", "--es", "msg", b64_text
-                )
-                self._screenshot_cache = None
-                return True, ""
-            except Exception as e:
-                error_msg = f"Failed to send non-ASCII text via broadcast: {e}"
-                return False, error_msg
-        
-        # For ASCII text
         try:
             # Escape special characters for shell
-            escaped = text.replace(" ", "%s").replace("\'", r"\'").replace('\"', r'\"').replace("(", r"\(").replace(")", r"\)").replace("&", r"\&")
-            self._adb_command("shell", "input", "text", escaped)
+            escaped_text = text.replace(" ", "%s").replace("&", "\\&")
+            self._adb_command("shell", "input", "text", escaped_text)
             self._screenshot_cache = None
-            return True, ""
         except Exception as e:
-            error_msg = f"Error typing text: {e}"
-            return False, error_msg
+            raise ActionExecutionError(f"Failed to type text: {e}")
     
     def press_back(self) -> None:
         """Press back button (KEYCODE_BACK = 4)."""

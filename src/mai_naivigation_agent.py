@@ -334,6 +334,7 @@ class MAIUINaivigationAgent(BaseAgent):
         self,
         instruction: str,
         images: List[Image.Image],
+        current_context: str = "",
     ) -> List[Dict[str, Any]]:
         """
         Build the message list for the LLM API call.
@@ -341,6 +342,7 @@ class MAIUINaivigationAgent(BaseAgent):
         Args:
             instruction: Task instruction from user.
             images: List of prepared images.
+            current_context: Optional context text to add to the current turn.
 
         Returns:
             List of message dictionaries for the API.
@@ -385,23 +387,37 @@ class MAIUINaivigationAgent(BaseAgent):
             if image_num < len(images):
                 cur_image = images[image_num]
                 encoded_string = pil_to_base64(cur_image)
+                
+                content_list = [{
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/png;base64,{encoded_string}"},
+                }]
+                
+                # Append current context if provided
+                if current_context:
+                    content_list.append({"type": "text", "text": current_context})
+                
                 messages.append({
                     "role": "user",
-                    "content": [{
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/png;base64,{encoded_string}"},
-                    }],
+                    "content": content_list,
                 })
         else:
             # No history, just add the current image
             cur_image = images[0]
             encoded_string = pil_to_base64(cur_image)
+            
+            content_list = [{
+                "type": "image_url",
+                "image_url": {"url": f"data:image/png;base64,{encoded_string}"},
+            }]
+            
+            # Append current context if provided
+            if current_context:
+                content_list.append({"type": "text", "text": current_context})
+                
             messages.append({
                 "role": "user",
-                "content": [{
-                    "type": "image_url",
-                    "image_url": {"url": f"data:image/png;base64,{encoded_string}"},
-                }],
+                "content": content_list,
             })
 
         return messages
@@ -438,9 +454,12 @@ class MAIUINaivigationAgent(BaseAgent):
 
         # Prepare images
         images = self._prepare_images(screenshot_bytes)
+        
+        # Get extra info for context
+        extra_info = kwargs.get("extra_info", "")
 
         # Build messages
-        messages = self._build_messages(instruction, images)
+        messages = self._build_messages(instruction, images, current_context=extra_info)
 
         # Make API call with retry logic
         max_retries = 3

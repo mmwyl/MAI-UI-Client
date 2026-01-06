@@ -243,35 +243,13 @@ class TaskExecutor:
         should_finish = False
         action_result = "success"
         
-        action_type = action["action"]
-        
-        if action_type == "FINISH":
+        if action["action"] == "FINISH":
             should_finish = True
             action_result = "success"
         
-        elif action_type == "terminate":
-            # 任务终止
-            status = action.get("status", "success")
-            should_finish = True
-            action_result = status
-            logger.info(f"Task terminate with status: {status}")
-        
-        elif action_type == "answer":
-            # Agent 回答/报告
-            answer_text = action.get("text", "")
-            logger.info(f"Agent answer: {answer_text}")
-            should_finish = True  # answer 通常意味着任务完成
-            action_result = "success"
-        
-        elif action_type == "note":
-            # 记录进度，不终止任务
-            note_text = action.get("text", "")
-            logger.info(f"Agent note: {note_text}")
-            action_result = "success"
-        
-        elif action_type == "ask_user":
+        elif action["action"] == "ask_user":
             # Handle user interaction
-            question = action.get("text", action.get("question", "Agent needs input"))
+            question = action.get("question", "Agent needs input")
             logger.info(f"Agent asks: {question}")
             
             try:
@@ -284,7 +262,7 @@ class TaskExecutor:
                 action_result = "failed"
                 raise
         
-        elif action_type == "mcp_call":
+        elif action["action"] == "mcp_call":
             # Handle MCP tool call (placeholder)
             tool_name = action.get("tool", "unknown")
             logger.info(f"MCP call: {tool_name}")

@@ -224,23 +224,20 @@ class AgentIntegration:
         Raises:
             ActionExecutionError: If action execution fails.
         """
-        import time
-        
         action_type = action["action"]
         
         try:
-            # 点击类动作
-            if action_type in ["tap", "click"]:
+            if action_type == "tap":
                 x, y = action["coordinate"]
                 self.device_bridge.tap(x, y)
-                logger.info(f"Executed {action_type} at ({x}, {y})")
+                logger.info(f"Executed tap at ({x}, {y})")
             
-            elif action_type == "double_click":
-                x, y = action["coordinate"]
-                self.device_bridge.tap(x, y)
-                time.sleep(0.1)
-                self.device_bridge.tap(x, y)
-                logger.info(f"Executed double_click at ({x}, {y})")
+            elif action_type == "swipe":
+                x1, y1 = action["start"]
+                x2, y2 = action["end"]
+                duration = action.get("duration", 300)
+                self.device_bridge.swipe(x1, y1, x2, y2, duration)
+                logger.info(f"Executed swipe from ({x1}, {y1}) to ({x2}, {y2})")
             
             elif action_type == "long_press":
                 x, y = action["coordinate"]
@@ -248,81 +245,10 @@ class AgentIntegration:
                 self.device_bridge.long_press(x, y, duration)
                 logger.info(f"Executed long press at ({x}, {y})")
             
-            # 滑动和拖拽
-            elif action_type == "swipe":
-                if "start" in action and "end" in action:
-                    x1, y1 = action["start"]
-                    x2, y2 = action["end"]
-                else:
-                    # Direction-based swipe - 需要在调用前转换
-                    logger.warning("Direction-based swipe not handled in integration layer")
-                    return
-                duration = action.get("duration", 300)
-                self.device_bridge.swipe(x1, y1, x2, y2, duration)
-                logger.info(f"Executed swipe from ({x1}, {y1}) to ({x2}, {y2})")
-            
-            elif action_type == "drag":
-                x1, y1 = action["start_coordinate"]
-                x2, y2 = action["end_coordinate"]
-                self.device_bridge.swipe(x1, y1, x2, y2, 1000)  # Drag 是慢速 swipe
-                logger.info(f"Executed drag from ({x1}, {y1}) to ({x2}, {y2})")
-            
-            # 多指手势
-            elif action_type == "pinch":
-                x, y = action["coordinate"]
-                direction = action.get("direction", "out")
-                offset = 100
-                if direction == "out":  # 放大
-                    self.device_bridge._adb_command("shell", "input", "swipe", 
-                        str(x), str(y), str(x - offset), str(y - offset), "300")
-                    self.device_bridge._adb_command("shell", "input", "swipe", 
-                        str(x), str(y), str(x + offset), str(y + offset), "300")
-                else:  # 缩小
-                    self.device_bridge._adb_command("shell", "input", "swipe", 
-                        str(x - offset), str(y - offset), str(x), str(y), "300")
-                    self.device_bridge._adb_command("shell", "input", "swipe", 
-                        str(x + offset), str(y + offset), str(x), str(y), "300")
-                logger.info(f"Executed pinch {direction} at ({x}, {y})")
-            
-            elif action_type == "rotate":
-                x, y = action["coordinate"]
-                direction = action.get("direction", "clockwise")
-                offset = 80
-                if direction == "clockwise":
-                    self.device_bridge._adb_command("shell", "input", "swipe", 
-                        str(x - offset), str(y), str(x), str(y - offset), "300")
-                    self.device_bridge._adb_command("shell", "input", "swipe", 
-                        str(x + offset), str(y), str(x), str(y + offset), "300")
-                else:
-                    self.device_bridge._adb_command("shell", "input", "swipe", 
-                        str(x), str(y - offset), str(x - offset), str(y), "300")
-                    self.device_bridge._adb_command("shell", "input", "swipe", 
-                        str(x), str(y + offset), str(x + offset), str(y), "300")
-                logger.info(f"Executed rotate {direction} at ({x}, {y})")
-            
-            # 输入
             elif action_type == "type":
                 text = action["text"]
-                result = self.device_bridge.type_text(text)
-                # 兼容新旧返回值格式
-                if isinstance(result, tuple):
-                    success, error_msg = result
-                    if not success:
-                        logger.warning(f"Type text failed: {error_msg}")
+                self.device_bridge.type_text(text)
                 logger.info(f"Typed text: {text[:50]}...")
-            
-            # 系统按钮
-            elif action_type == "system_button":
-                button = action.get("button", "back")
-                if button == "back":
-                    self.device_bridge.press_back()
-                elif button == "home":
-                    self.device_bridge.press_home()
-                elif button in ["menu", "recent"]:
-                    self.device_bridge.press_recent()
-                elif button == "enter":
-                    self.device_bridge._adb_command("shell", "input", "keyevent", "66")
-                logger.info(f"Pressed {button} button")
             
             elif action_type == "back":
                 self.device_bridge.press_back()
@@ -336,26 +262,8 @@ class AgentIntegration:
                 self.device_bridge.press_recent()
                 logger.info("Pressed recent apps button")
             
-            # 等待和记录
-            elif action_type == "wait":
-                duration = action.get("duration", 2)
-                duration = min(max(1, int(duration)), 60)  # 限制 1-60 秒
-                time.sleep(duration)
-                logger.info(f"Waited {duration} seconds")
-            
-            elif action_type == "note":
-                note_text = action.get("text", "")
-                logger.info(f"Note: {note_text}")
-                # note 动作不执行设备操作，仅记录
-            
-            # 应用控制
-            elif action_type == "open":
-                app_name = action.get("text", "")
-                # 这个通常由 executor 处理，因为需要应用映射
-                logger.info(f"Open app: {app_name}")
-            
-            # 任务控制 - 由 executor 处理
-            elif action_type in ["FINISH", "terminate", "answer", "ask_user", "mcp_call"]:
+            elif action_type in ["FINISH", "ask_user", "mcp_call"]:
+                # These are handled by executor, not executed on device
                 logger.debug(f"Action {action_type} handled by executor")
             
             else:
