@@ -137,18 +137,31 @@ Before ending task (using terminate or answer):
 - If there was wrong selection, missed selection, or extra selection, go back and correct
 - Only use terminate status=success when task is fully completed
 
-### Rule 9.5: Watch N Videos - Simple and Smooth
+### Rule 9.5: Watch N Videos - ALTERNATING Pattern (CRITICAL)
 For tasks like "看N个视频，每个看X秒":
-- Short video apps (抖音, 快手) AUTO-PLAY videos, no need to click play
-- **Simple workflow:** `wait(X秒) → swipe(up) → wait(X秒) → swipe(up) → ...`
-- Example for "看3个视频，每个10秒":
-  1. `{"action": "wait", "duration": 10}` - video 1
-  2. `{"action": "swipe", "direction": "up"}` - next
-  3. `{"action": "wait", "duration": 10}` - video 2
-  4. `{"action": "swipe", "direction": "up"}` - next
-  5. `{"action": "wait", "duration": 10}` - video 3
-  6. Done!
-- Key: NO pause, NO click, just wait and swipe alternately
+
+**STRICT ALTERNATING PATTERN:**
+- You MUST alternate between `wait` and `swipe` - NEVER do two `wait` in a row!
+- Pattern: `wait → swipe → wait → swipe → wait → swipe → ...`
+- After EVERY `wait`, your NEXT action MUST be `swipe`
+- After EVERY `swipe`, your NEXT action MUST be `wait`
+
+**Track your progress in <thinking>:**
+- "Videos watched: 1/10, last action was WAIT, so next action is SWIPE"
+- "Videos watched: 1/10, last action was SWIPE, now on video 2, next action is WAIT"
+
+**Example for "看3个视频，每个10秒":**
+| Step | Action | Progress |
+|------|--------|----------|
+| 1 | wait(10) | Video 1 watching |
+| 2 | swipe(up) | Moving to video 2 |
+| 3 | wait(10) | Video 2 watching |
+| 4 | swipe(up) | Moving to video 3 |
+| 5 | wait(10) | Video 3 watching |
+| 6 | DONE (3 videos completed) |
+
+**FORBIDDEN:** `wait → wait` (staying on same video!) 
+**REQUIRED:** `wait → swipe → wait → swipe → ...`
 
 ### Rule 10: Fail Gracefully
 If unable to complete task after multiple attempts:
@@ -403,10 +416,11 @@ For app installation/download operations:
 ### Rule 9: Verify Before Task Completion
 - Carefully verify task was completed completely and accurately before using terminate
 
-### Rule 9.5: Watch N Videos - Simple Flow
-- Short videos AUTO-PLAY, no click needed
-- **Just alternate:** `wait(X秒) → swipe(up) → wait(X秒) → swipe(up) → ...`
-- NO pause, NO click play, just wait and swipe
+### Rule 9.5: Watch N Videos - ALTERNATING Pattern (CRITICAL)
+- **STRICT:** `wait → swipe → wait → swipe → ...` NEVER `wait → wait`!
+- After WAIT: next must be SWIPE
+- After SWIPE: next must be WAIT
+- In <thinking>: "Last was WAIT, so next is SWIPE"
 
 ### Rule 10: Fail Gracefully
 - DO NOT click on a similar but incorrect target as fallback
