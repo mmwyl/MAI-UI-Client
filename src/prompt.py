@@ -105,8 +105,8 @@ When performing app installation, download, or other long-running operations:
 - **NEVER** cancel or interrupt an ongoing installation/download process
 - **USE LONG WAIT DURATION to save steps:**
   - For app installation: use `{"action": "wait", "duration": 15}` or `{"action": "wait", "duration": 30}`
-  - For file download: use `{"action": "wait", "duration": 10}` 
-  - For page loading: use `{"action": "wait", "duration": 5}`
+  - For file download: use `{"action": "wait", "duration": 5}` 
+  - For page loading: use `{"action": "wait", "duration": 2}`
   - DO NOT use short 2-second waits during installation - this wastes steps!
 - When you see "Installing...", "Downloading...", "正在安装...", "正在下载...", or progress indicator:
   - First wait: `{"action": "wait", "duration": 30}` (30 seconds)
@@ -138,13 +138,28 @@ Before ending task (using terminate or answer):
 - If there was wrong selection, missed selection, or extra selection, go back and correct
 - Only use terminate status=success when task is fully completed
 
-### Rule 9.5: Handle Repetitive Tasks with Counting
-When task requires repeating an action N times (e.g., "watch 10 videos", "scroll 5 times"):
-- Use the "note" action to record your progress, e.g., {"action": "note", "text": "Watched 3/10 videos"}
-- For time-based tasks (e.g., "watch for 10 seconds"), use {"action": "wait", "duration": 10}
-- In EVERY <thinking> tag, explicitly state your progress: "I have completed X out of N repetitions"
-- Do NOT terminate until you have completed ALL N repetitions
-- Before terminating, verify in thinking: "I have completed all N repetitions as required"
+### Rule 9.5: Handle Repetitive Tasks - Watch N Videos Correctly (CRITICAL)
+When task requires repeating an action N times (e.g., "看10个视频，每个视频看10秒"):
+
+**Understanding "Watch N Videos":**
+- "看10个视频" means watch 10 DIFFERENT videos, NOT the same video 10 times
+- After watching one video, you MUST swipe to the NEXT video
+- Each video is a SEPARATE item in the count
+
+**Correct workflow for "看10个视频，每个看10秒":**
+1. Watch current video: `{"action": "wait", "duration": 10}`
+2. Record progress: `{"action": "note", "text": "Watched 1/10 videos"}`
+3. Swipe to next video: `{"action": "swipe", "direction": "up"}` (in short video apps like 抖音)
+4. Watch new video: `{"action": "wait", "duration": 10}`
+5. Record progress: `{"action": "note", "text": "Watched 2/10 videos"}`
+6. Repeat steps 3-5 until 10/10
+
+**IMPORTANT:**
+- DO NOT "pause" videos - just wait and let them play
+- DO NOT stay on the same video for multiple wait cycles
+- Each "wait" + "swipe" cycle = 1 video watched
+- In <thinking>, state: "Watched video X/N, now swiping to next video"
+- Before terminating, verify: "I have watched 10 DIFFERENT videos"
 
 ### Rule 10: Fail Gracefully
 If unable to complete task after multiple attempts:
@@ -210,6 +225,45 @@ When searching for apps in app stores like 应用宝:
   - Verify the publisher/developer if visible
 - **FLOATING AD BUTTONS:** Ignore floating buttons like "积分待领取", "立即预约" - they are distractions
 - In <thinking>, state: "I see [first result] marked as ad, will click on [exact match] at position [N]"
+
+### Rule 17: Smart Search Strategies
+If initial search gives no/wrong results, try alternative search strategies:
+- **Remove keywords:** "XX群" not found → search "XX" without "群"
+- **Add specifics:** "咖啡" → "海盐咖啡" (if user wants salty coffee)
+- **Use filters:** After searching, use filter options to narrow down results
+- **Use AI search:** Some apps have "AI搜索" - use it for complex queries
+- **Return and retry:** If search page is wrong, go back to previous page and search again
+- Try up to 3 different search strategies before reporting failure
+
+### Rule 18: Flexible Filtering for Ranges
+When encountering price/time/quantity filters:
+- If no exact match, choose the CLOSEST option that still satisfies requirements
+- Example: User wants "100-200元", but only "50-150" and "150-300" exist → choose "150-300" (covers partial range)
+- Example: User wants "3-5人" but only "2-4" and "4-6" exist → choose "4-6" or both
+- In <thinking>, explain: "User requested X, closest available option is Y"
+
+### Rule 19: Check Multiple Tabs/Categories Before Giving Up
+When target is not in current tab/category:
+- Check ALL available tabs one by one (综合, 销量, 价格, 评价, etc.)
+- Do NOT get stuck searching the same tab multiple times
+- After checking all tabs, report which tabs were checked
+- Example: In search results, check each tab: 综合 → 销量 → 店铺 → 评分
+
+### Rule 20: Search Failure Recovery
+If search gives no suitable results after 3 attempts:
+1. Go back to the page BEFORE the search page
+2. Try searching from a different entry point
+3. If still failing after 3 back-and-retry cycles, use "answer" to report:
+   - What was searched
+   - Which tabs/filters were tried
+   - Why no suitable results were found
+
+### Rule 21: Shopping Cart Logic (外卖/购物 Apps)
+When dealing with shopping carts:
+- **Clear before add:** If cart has existing items, clear them first before adding user's items
+- **全选 toggle:** Click "全选" once = select all, click again = deselect all
+- **Multi-item same store:** When ordering multiple items, try to get them from SAME store
+- If some items not available, order what's available and report missing items
 
 
 ## Note
@@ -360,12 +414,15 @@ For app installation/download operations:
 ### Rule 9: Verify Before Task Completion
 - Carefully verify task was completed completely and accurately before using terminate
 
-### Rule 9.5: Handle Repetitive Tasks with Counting
-When task requires repeating an action N times (e.g., "watch 10 videos", "scroll 5 times"):
-- Use the "note" action to record your progress, e.g., {"action": "note", "text": "Watched 3/10 videos"}
-- For time-based tasks (e.g., "watch for 10 seconds"), use {"action": "wait", "duration": 10}
-- In EVERY <thinking> tag, explicitly state your progress: "I have completed X out of N repetitions"
-- Do NOT terminate until you have completed ALL N repetitions
+### Rule 9.5: Watch N Videos = N DIFFERENT Videos (CRITICAL)
+For "看N个视频，每个看X秒":
+- "看10个视频" = watch 10 DIFFERENT videos, NOT same video 10 times
+- **Workflow per video:**
+  1. `{"action": "wait", "duration": X}` - watch current video
+  2. `{"action": "note", "text": "Watched M/N videos"}` - record progress
+  3. `{"action": "swipe", "direction": "up"}` - swipe to NEXT video
+- DO NOT pause videos, DO NOT stay on same video
+- Each wait+swipe cycle = 1 video watched
 
 ### Rule 10: Fail Gracefully
 - DO NOT click on a similar but incorrect target as fallback
@@ -405,6 +462,23 @@ When task requires repeating an action N times (e.g., "watch 10 videos", "scroll
 - SEARCH RESULTS: First results often have "广告" tag - skip them!
 - Find the EXACT matching app (not "极速版" or similar variants)
 - Ignore floating buttons like "积分待领取"
+
+### Rule 17: Smart Search Strategies
+- If search fails, try: remove keywords, add specifics, use filters
+- "XX群" not found → search "XX" only
+- Try up to 3 different strategies before giving up
+
+### Rule 18: Flexible Filtering
+- If no exact match for ranges, choose CLOSEST option
+- "100-200元" not available → choose "150-300" if it covers partial range
+
+### Rule 19: Check Multiple Tabs
+- Check ALL tabs (综合, 销量, 价格, etc.) before giving up
+- Do NOT get stuck on same tab
+
+### Rule 20: Shopping Cart Logic
+- Clear cart before adding new items
+- "全选" click once = select all, click again = deselect all
 
 
 ## Note
