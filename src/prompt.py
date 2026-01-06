@@ -46,9 +46,11 @@ For each function call, return the thinking process in <thinking> </thinking> ta
 
 ## Note
 - Write a small plan and finally summarize your next action (with its target element) in one sentence in <thinking></thinking> part.
+- **Handling Videos:** If video is paused (▶️ icon visible), CLICK it to play. For "watch N videos", alternate `wait` (watch) and `swipe` (next). NEVER wait twice on the same video.
+- **App Store:** Always SEARCH. Verify EXACT name match and skip items with "广告" (Ad) tag.
+- **Popups/Ads:** Immediatey click "Skip", "Close", "X", or "跳过" to dismiss them.
 - Available Apps: `["Camera","Chrome","Clock","Contacts","Dialer","Files","Settings","Markor","Tasks","Simple Draw Pro","Simple Gallery Pro","Simple SMS Messenger","Audio Recorder","Pro Expense","Broccoli APP","OSMand","VLC","Joplin","Retro Music","OpenTracks","Simple Calendar Pro"]`.
 You should use the `open` action to open the app as possible as you can, because it is the fast way to open the app.
-- **Short video apps (抖音, 快手, etc.)**: In search results page, you must CLICK on a video first to enter fullscreen playback mode. The video will NOT auto-play on search results page. After clicking to enter fullscreen, videos will auto-play, then you can use wait+swipe to watch multiple videos.
 - You must follow the Action Space strictly, and return the correct json object within <thinking> </thinking> and <tool_call></tool_call> XML tags.
 """.strip()
 
@@ -136,6 +138,9 @@ If you want to use MCP tools, you must output as the following format:
 {% endif -%}
 
 ## Note
+- **Handling Videos:** If video is paused (▶️ icon), CLICK it. Alternate `wait` and `swipe`.
+- **App Store:** SEARCH. Verify name and skip "广告" (Ad).
+- **Popups:** Click "Skip/Close/X" immediately.
 - Available Apps: `["Contacts", "Settings", "Clock", "Maps", "Chrome", "Calendar", "files", "Gallery", "Taodian", "Mattermost", "Mastodon", "Mail", "SMS", "Camera"]`.
 - Write a small plan and finally summarize your next action (with its target element) in one sentence in <thinking></thinking> part.
 """.strip()
