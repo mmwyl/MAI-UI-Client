@@ -162,20 +162,37 @@ def validate_action(action: Dict[str, Any]) -> Tuple[bool, Optional[str]]:
     
     action_type = action["action"]
     
-    # Valid action types
+    # Valid action types - 包含所有支持的动作
     valid_actions = [
-        "tap", "swipe", "type", "long_press",
-        "back", "home", "recent",
-        "FINISH", "ask_user", "mcp_call"
+        # 基础点击动作
+        "tap", "click", "long_press", "double_click",
+        # 滑动和拖拽
+        "swipe", "drag",
+        # 多指手势
+        "pinch", "rotate",
+        # 输入
+        "type",
+        # 系统按钮
+        "back", "home", "recent", "system_button",
+        # 应用控制
+        "open",
+        # 等待和记录
+        "wait", "note",
+        # 任务控制
+        "terminate", "answer", "FINISH",
+        # 用户交互
+        "ask_user",
+        # MCP 工具调用
+        "mcp_call"
     ]
     
     if action_type not in valid_actions:
         return False, f"Invalid action type: {action_type}. Must be one of {valid_actions}"
     
     # Validate parameters for each action type
-    if action_type == "tap":
+    if action_type in ["tap", "click", "long_press", "double_click"]:
         if "coordinate" not in action:
-            return False, "tap action requires 'coordinate' field"
+            return False, f"{action_type} action requires 'coordinate' field"
         coord = action["coordinate"]
         if not isinstance(coord, (list, tuple)) or len(coord) != 2:
             return False, "coordinate must be [x, y] list"
@@ -183,12 +200,19 @@ def validate_action(action: Dict[str, Any]) -> Tuple[bool, Optional[str]]:
             return False, "coordinate values must be numeric"
     
     elif action_type == "swipe":
-        if "start" not in action or "end" not in action:
-            return False, "swipe action requires 'start' and 'end' fields"
-        for field in ["start", "end"]:
-            coord = action[field]
-            if not isinstance(coord, (list, tuple)) or len(coord) != 2:
-                return False, f"{field} must be [x, y] list"
+        # 支持两种格式：direction-based 和 coordinate-based
+        if "direction" not in action and ("start" not in action or "end" not in action):
+            return False, "swipe action requires 'direction' or 'start'/'end' fields"
+    
+    elif action_type == "drag":
+        if "start_coordinate" not in action or "end_coordinate" not in action:
+            return False, "drag action requires 'start_coordinate' and 'end_coordinate' fields"
+    
+    elif action_type in ["pinch", "rotate"]:
+        if "coordinate" not in action:
+            return False, f"{action_type} action requires 'coordinate' field"
+        if "direction" not in action:
+            return False, f"{action_type} action requires 'direction' field"
     
     elif action_type == "type":
         if "text" not in action:
@@ -196,13 +220,38 @@ def validate_action(action: Dict[str, Any]) -> Tuple[bool, Optional[str]]:
         if not isinstance(action["text"], str):
             return False, "text must be a string"
     
-    elif action_type == "long_press":
-        if "coordinate" not in action:
-            return False, "long_press action requires 'coordinate' field"
+    elif action_type == "system_button":
+        if "button" not in action:
+            return False, "system_button action requires 'button' field"
+        valid_buttons = ["back", "home", "menu", "recent", "enter"]
+        if action["button"] not in valid_buttons:
+            return False, f"Invalid button: {action['button']}. Must be one of {valid_buttons}"
+    
+    elif action_type == "open":
+        if "text" not in action:
+            return False, "open action requires 'text' field (app name)"
+    
+    elif action_type == "wait":
+        # duration 是可选的
+        if "duration" in action:
+            if not isinstance(action["duration"], (int, float)):
+                return False, "wait duration must be numeric"
+    
+    elif action_type == "note":
+        if "text" not in action:
+            return False, "note action requires 'text' field"
+    
+    elif action_type == "terminate":
+        if "status" not in action:
+            return False, "terminate action requires 'status' field"
+    
+    elif action_type == "answer":
+        if "text" not in action:
+            return False, "answer action requires 'text' field"
     
     elif action_type == "ask_user":
-        if "question" not in action:
-            return False, "ask_user action requires 'question' field"
+        if "text" not in action and "question" not in action:
+            return False, "ask_user action requires 'text' or 'question' field"
     
     elif action_type == "mcp_call":
         if "tool" not in action or "args" not in action:

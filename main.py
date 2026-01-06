@@ -124,7 +124,8 @@ def main():
 
             # Loop Detection: Check if we are repeating the exact same action
             # (Simple heuristic: same action type and args as previous 3 steps)
-            if step > 3:
+            # EXCEPTION: "wait" actions are allowed to repeat during installation/download
+            if step > 3 and action_type != "wait":
                 last_steps = agent.traj_memory.steps[-3:]
                 is_loop = True
                 for s in last_steps:
@@ -303,15 +304,82 @@ def main():
                     device._adb_command("shell", "input", "keyevent", "66") # KEYCODE_ENTER
             
             elif action_type == "wait":
-                print("  Waiting...")
+                duration = action_dict.get("duration", 2)  # 默认等待2秒
+                # 限制最大等待时间为60秒，防止异常值
+                duration = min(max(1, int(duration)), 60)
+                print(f"  Waiting {duration} seconds...")
                 import time
-                time.sleep(1)
+                time.sleep(duration)
+            
+            elif action_type == "note":
+                # 状态追踪：记录进度信息
+                note_text = action_dict.get("text", "")
+                print(f"  📝 Note: {note_text}")
+                # 可以在这里添加日志记录或其他处理
             
             elif action_type == "answer":
                 text = action_dict.get("text", "")
                 print(f"  Agent answer: {text}")
                 # Answer usually means task is complete
                 done = True
+            
+            elif action_type == "pinch":
+                # 双指缩放手势
+                coord = action_dict.get("coordinate", [0.5, 0.5])
+                direction = action_dict.get("direction", "out")
+                x = int(coord[0] * device.screen_width)
+                y = int(coord[1] * device.screen_height)
+                
+                # 计算两个手指的起始和结束位置
+                offset = 100  # 像素偏移量
+                if direction == "out":  # 放大
+                    # 两指从中心向外移动
+                    print(f"  Pinch OUT (zoom in) at ({x}, {y})")
+                    # 使用 adb shell input 模拟双指
+                    device._adb_command("shell", "input", "swipe", 
+                        str(x), str(y), str(x - offset), str(y - offset), "300")
+                    device._adb_command("shell", "input", "swipe", 
+                        str(x), str(y), str(x + offset), str(y + offset), "300")
+                else:  # 缩小
+                    # 两指从外向中心移动
+                    print(f"  Pinch IN (zoom out) at ({x}, {y})")
+                    device._adb_command("shell", "input", "swipe", 
+                        str(x - offset), str(y - offset), str(x), str(y), "300")
+                    device._adb_command("shell", "input", "swipe", 
+                        str(x + offset), str(y + offset), str(x), str(y), "300")
+            
+            elif action_type == "rotate":
+                # 双指旋转手势
+                coord = action_dict.get("coordinate", [0.5, 0.5])
+                direction = action_dict.get("direction", "clockwise")
+                x = int(coord[0] * device.screen_width)
+                y = int(coord[1] * device.screen_height)
+                
+                offset = 80  # 像素偏移量
+                print(f"  Rotate {direction} at ({x}, {y})")
+                
+                if direction == "clockwise":
+                    # 顺时针旋转
+                    device._adb_command("shell", "input", "swipe", 
+                        str(x - offset), str(y), str(x), str(y - offset), "300")
+                    device._adb_command("shell", "input", "swipe", 
+                        str(x + offset), str(y), str(x), str(y + offset), "300")
+                else:
+                    # 逆时针旋转
+                    device._adb_command("shell", "input", "swipe", 
+                        str(x), str(y - offset), str(x - offset), str(y), "300")
+                    device._adb_command("shell", "input", "swipe", 
+                        str(x), str(y + offset), str(x + offset), str(y), "300")
+            
+            elif action_type == "double_click":
+                coord = action_dict.get("coordinate", [0.5, 0.5])
+                x = int(coord[0] * device.screen_width)
+                y = int(coord[1] * device.screen_height)
+                print(f"  Double click at ({x}, {y})")
+                device.tap(x, y)
+                import time
+                time.sleep(0.1)
+                device.tap(x, y)
             
             else:
                 print(f"  Unknown action: {action_type}")

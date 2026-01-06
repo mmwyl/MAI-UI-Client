@@ -12,6 +12,7 @@
 
 ## 📰 News
 
+* 🚀 **[2026-01-06]** Enhanced Phone Agent with 15 built-in rules, new actions (pinch, rotate, double_click, note, wait with duration), improved popup/permission handling!
 * 🎁 **[2025-12-29]** We release MAI-UI Technical Report on [arXiv](https://arxiv.org/abs/2512.22047)!
 * 🎁 **[2025-12-29]** Initial release of [MAI-UI-8B](https://huggingface.co/Tongyi-MAI/MAI-UI-8B) and [MAI-UI-2B](https://huggingface.co/Tongyi-MAI/MAI-UI-2B) models on Hugging Face.
 
@@ -354,7 +355,48 @@ See `examples/basic_tasks.py` for more examples.
 ✅ **Trajectory Tracking**: Save and replay execution history  
 ✅ **Error Recovery**: Automatic retry and graceful error handling  
 ✅ **Device Management**: List, select, and manage multiple devices  
-✅ **Flexible Configuration**: YAML files, environment variables, or CLI flags  
+✅ **Flexible Configuration**: YAML files, environment variables, or CLI flags
+
+#### Enhanced Action Space
+
+The agent supports a rich set of actions:
+
+| Action | Description | Example |
+|--------|-------------|---------|
+| `click` | Single tap at coordinates | `{"action": "click", "coordinate": [0.5, 0.3]}` |
+| `double_click` | Double tap | `{"action": "double_click", "coordinate": [0.5, 0.3]}` |
+| `long_press` | Long press gesture | `{"action": "long_press", "coordinate": [0.5, 0.3]}` |
+| `swipe` | Swipe in direction | `{"action": "swipe", "direction": "up"}` |
+| `drag` | Drag from point A to B | `{"action": "drag", "start_coordinate": [0.3, 0.5], "end_coordinate": [0.7, 0.5]}` |
+| `pinch` | Two-finger zoom | `{"action": "pinch", "coordinate": [0.5, 0.5], "direction": "out"}` |
+| `rotate` | Two-finger rotation | `{"action": "rotate", "coordinate": [0.5, 0.5], "direction": "clockwise"}` |
+| `type` | Input text | `{"action": "type", "text": "Hello"}` |
+| `open` | Launch app by name | `{"action": "open", "text": "Settings"}` |
+| `wait` | Wait for N seconds | `{"action": "wait", "duration": 5}` |
+| `note` | Record progress for tracking | `{"action": "note", "text": "Step 1 completed"}` |
+| `system_button` | Press system button | `{"action": "system_button", "button": "back"}` |
+| `terminate` | End task | `{"action": "terminate", "status": "success"}` |
+| `answer` | Report result to user | `{"action": "answer", "text": "Task completed"}` |
+
+#### Built-in Agent Rules
+
+The agent follows 15 critical rules for reliable task execution:
+
+1. **Exact Name Matching** - Only interact with exactly specified targets
+2. **Search Before Download** - Always search in app stores, never click recommendations
+3. **App Context Check** - Verify correct app before actions
+4. **Action Verification** - Confirm previous action took effect
+5. **Loading Handling** - Wait appropriately for page loads
+6. **Long-Running Patience** - Never cancel ongoing installations
+7. **Swipe Strategy** - Systematic scrolling to find targets
+8. **Loop Prevention** - Avoid repeating failed actions
+9. **Input Focus** - Ensure text fields are focused before typing
+10. **Completion Verification** - Verify task success before terminating
+11. **Popup Handling** - Auto-dismiss unrelated dialogs (allow permissions by default)
+12. **Permission Handling** - Auto-allow permission requests
+13. **Authentication Handling** - Prompt user for login/verification
+14. **Progress Tracking** - Use `note` action for complex multi-step tasks
+15. **Conditional Tasks** - Handle "if...then..." instructions with fallbacks  
 
 ### Troubleshooting
 
@@ -382,6 +424,27 @@ mai-phone config show
 # Test with custom URL
 mai-phone --model-url http://localhost:8000/v1 "test task"
 ```
+
+**Chinese/Unicode text input fails:**
+```bash
+# Install ADB Keyboard (required for non-ASCII input)
+# Download from: https://github.com/senzhk/ADBKeyBoard
+adb install ADBKeyBoard.apk
+
+# Enable and set as default IME
+adb shell ime enable com.android.adbkeyboard/.AdbIME
+adb shell ime set com.android.adbkeyboard/.AdbIME
+```
+
+**Agent gets stuck in loop:**
+- The agent has built-in loop detection (same action repeated 3 times triggers strategy change)
+- For installation tasks, the agent will wait patiently (up to 60 seconds per wait action)
+- If task requires login, agent will prompt you to complete manually
+
+**Popup/permission dialogs blocking task:**
+- The agent auto-handles common popups (privacy policy, permissions, ratings)
+- Default behavior: Allow permissions, dismiss unrelated dialogs
+- If a popup cannot be dismissed, the agent will report the issue
 
 ---
 
