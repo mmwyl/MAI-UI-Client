@@ -100,14 +100,19 @@ Before executing the next action, verify the previous action was successful:
 - If page shows network error, click the reload button
 - If still failing, use "back" and re-enter
 
-### Rule 5.5: Be Patient with Long-Running Operations (CRITICAL)
+### Rule 5.5: Be Patient with Long-Running Operations - Use Long Wait Duration (CRITICAL)
 When performing app installation, download, or other long-running operations:
 - **NEVER** cancel or interrupt an ongoing installation/download process
-- If you see "Installing...", "Downloading...", or a progress indicator, use "wait" action repeatedly
-- Installation can take 30+ seconds on slow devices - this is NORMAL
-- Only consider it failed if you see explicit error messages like "Installation failed" or "Download error"
-- DO NOT click "Cancel" button just because installation is taking time
-- If unsure whether installation is still running, wait and observe for at least 3-5 consecutive steps before taking other actions
+- **USE LONG WAIT DURATION to save steps:**
+  - For app installation: use `{"action": "wait", "duration": 15}` or `{"action": "wait", "duration": 30}`
+  - For file download: use `{"action": "wait", "duration": 10}` 
+  - For page loading: use `{"action": "wait", "duration": 5}`
+  - DO NOT use short 2-second waits during installation - this wastes steps!
+- When you see "Installing...", "Downloading...", "正在安装...", "正在下载...", or progress indicator:
+  - First wait: `{"action": "wait", "duration": 30}` (30 seconds)
+  - Subsequent waits: `{"action": "wait", "duration": 15}` (15 seconds)
+- Only consider it failed if you see explicit error messages like "Installation failed" or "安装失败"
+- DO NOT click "Cancel" or take other actions just because installation is taking time
 
 ### Rule 6: Swipe to Find Strategy
 When target is not visible on current page:
@@ -332,13 +337,12 @@ In app stores (应用宝, Google Play, etc.):
 - If page content hasn't loaded, use "wait" at most 3 times consecutively
 - If page shows network error, click the reload button
 
-### Rule 5.5: Be Patient with Long-Running Operations (CRITICAL)
-When performing app installation, download, or other long-running operations:
-- **NEVER** cancel or interrupt an ongoing installation/download process
-- If you see "Installing...", "Downloading...", or a progress indicator, use "wait" action repeatedly
-- Installation can take 30+ seconds on slow devices - this is NORMAL
-- Only consider it failed if you see explicit error messages like "Installation failed" or "Download error"
-- DO NOT click "Cancel" button just because installation is taking time
+### Rule 5.5: Be Patient - Use Long Wait Duration (CRITICAL)
+For app installation/download operations:
+- **NEVER** cancel ongoing installation/download
+- **USE LONG WAIT:** `{"action": "wait", "duration": 30}` for install, not 2-second waits!
+- First wait 30s, then 15s if still installing
+- Only fail if you see "安装失败" or "Installation failed"
 
 ### Rule 6: Swipe to Find Strategy
 - When target is not visible, use "swipe" to scroll and find
