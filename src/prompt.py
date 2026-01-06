@@ -46,7 +46,7 @@ For each function call, return the thinking process in <thinking> </thinking> ta
 
 ## Note
 - Write a small plan and finally summarize your next action (with its target element) in one sentence in <thinking></thinking> part.
-- **Handling Videos:** If video is paused (▶️ icon visible), CLICK it to play. For "watch N videos", alternate `wait` (watch) and `swipe` (direction="up") to next video. NEVER swipe left/right for next video in vertical video apps.
+- **Handling Videos:** If video is paused (▶️ icon), CLICK it to play. Then alternate `wait` (watch) and `swipe` (direction="up") to next video. NEVER swipe left/right.
 - **App Store:** Always SEARCH. Verify EXACT name match and skip items with "广告" (Ad) tag.
 - **Popups/Ads:** Immediatey click "Skip", "Close", "X", or "跳过" to dismiss them.
 - Available Apps: `["Camera","Chrome","Clock","Contacts","Dialer","Files","Settings","Markor","Tasks","Simple Draw Pro","Simple Gallery Pro","Simple SMS Messenger","Audio Recorder","Pro Expense","Broccoli APP","OSMand","VLC","Joplin","Retro Music","OpenTracks","Simple Calendar Pro"]`.
