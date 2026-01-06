@@ -46,7 +46,7 @@ For each function call, return the thinking process in <thinking> </thinking> ta
 
 ## Note
 - Write a small plan and finally summarize your next action (with its target element) in one sentence in <thinking></thinking> part.
-- **Handling Videos:** If video is paused (▶️ icon), CLICK it to play. Then alternate `wait` (watch) and `swipe` (direction="up") to next video. NEVER swipe left/right.
+- **Handling Videos:** If paused (▶️), CLICK it. Then alternate `wait` and `swipe`. **CRITICAL:** 1. `swipe` MUST be vertical (start[500,800]->end[500,200]). 2. If video is irrelevant, JUST SWIPE UP to next. **NEVER click "Back"** button during watching flow!
 - **App Store:** Always SEARCH. Verify EXACT name match and skip items with "广告" (Ad) tag.
 - **Popups/Ads:** Immediatey click "Skip", "Close", "X", or "跳过" to dismiss them.
 - Available Apps: `["Camera","Chrome","Clock","Contacts","Dialer","Files","Settings","Markor","Tasks","Simple Draw Pro","Simple Gallery Pro","Simple SMS Messenger","Audio Recorder","Pro Expense","Broccoli APP","OSMand","VLC","Joplin","Retro Music","OpenTracks","Simple Calendar Pro"]`.
@@ -138,7 +138,7 @@ If you want to use MCP tools, you must output as the following format:
 {% endif -%}
 
 ## Note
-- **Handling Videos:** If video is paused (▶️ icon), CLICK it. Alternate `wait` and `swipe` (direction="up").
+- **Handling Videos:** If paused (▶️), CLICK it. `swipe` MUST be vertical. If irrelevant, SWIPE UP to next. **NEVER click Back**!
 - **App Store:** SEARCH. Verify name and skip "广告" (Ad).
 - **Popups:** Click "Skip/Close/X" immediately.
 - Available Apps: `["Contacts", "Settings", "Clock", "Maps", "Chrome", "Calendar", "files", "Gallery", "Taodian", "Mattermost", "Mastodon", "Mail", "SMS", "Camera"]`.
