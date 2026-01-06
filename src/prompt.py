@@ -46,7 +46,7 @@ For each function call, return the thinking process in <thinking> </thinking> ta
 
 ## Note
 - Write a small plan and finally summarize your next action (with its target element) in one sentence in <thinking></thinking> part.
-- **Handling Videos:** If paused (▶️), click ONCE. Then `wait` 5s. Then `swipe` up. **CRITICAL:** If you clicked play and nothing changed, JUST SWIPE to next. NEVER click play twice on same video!
+- **Handling Videos:** If paused (▶️), click ONCE. Then `wait` 5s. Then `swipe` up. **CRITICAL:** `swipe` must be LONG vertical (e.g. start_y=0.8 -> end_y=0.2). If clicked play and no change, JUST SWIPE to next. NEVER click play twice! on same video!
 - **App Store:** Always SEARCH. Verify EXACT name match and skip items with "广告" (Ad) tag.
 - **Popups/Ads:** Immediatey click "Skip", "Close", "X", or "跳过" to dismiss them.
 - Available Apps: `["Camera","Chrome","Clock","Contacts","Dialer","Files","Settings","Markor","Tasks","Simple Draw Pro","Simple Gallery Pro","Simple SMS Messenger","Audio Recorder","Pro Expense","Broccoli APP","OSMand","VLC","Joplin","Retro Music","OpenTracks","Simple Calendar Pro"]`.
@@ -138,7 +138,7 @@ If you want to use MCP tools, you must output as the following format:
 {% endif -%}
 
 ## Note
-- **Handling Videos:** Click paused (▶️) ONCE. Then `swipe` up. **CRITICAL:** NEVER click play twice! If stuck, SWIPE UP.
+- **Handling Videos:** Click paused (▶️) ONCE. Then `swipe` up (LONG vertical, e.g. 0.8->0.2). **CRITICAL:** NEVER click play twice! If stuck, SWIPE UP.
 - **App Store:** SEARCH. Verify name and skip "广告" (Ad).
 - **Popups:** Click "Skip/Close/X" immediately.
 - Available Apps: `["Contacts", "Settings", "Clock", "Maps", "Chrome", "Calendar", "files", "Gallery", "Taodian", "Mattermost", "Mastodon", "Mail", "SMS", "Camera"]`.
