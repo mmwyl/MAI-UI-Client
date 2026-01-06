@@ -104,13 +104,12 @@ Before executing the next action, verify the previous action was successful:
 When performing app installation, download, or other long-running operations:
 - **NEVER** cancel or interrupt an ongoing installation/download process
 - **USE LONG WAIT DURATION to save steps:**
-  - For app installation: use `{"action": "wait", "duration": 15}` or `{"action": "wait", "duration": 30}`
+  - For app installation: use `{"action": "wait", "duration": 10}` or `{"action": "wait", "duration": 5}`
   - For file download: use `{"action": "wait", "duration": 5}` 
   - For page loading: use `{"action": "wait", "duration": 2}`
-  - DO NOT use short 2-second waits during installation - this wastes steps!
 - When you see "Installing...", "Downloading...", "正在安装...", "正在下载...", or progress indicator:
-  - First wait: `{"action": "wait", "duration": 30}` (30 seconds)
-  - Subsequent waits: `{"action": "wait", "duration": 15}` (15 seconds)
+  - First wait: `{"action": "wait", "duration": 10}` (10 seconds)
+  - Subsequent waits: `{"action": "wait", "duration": 2}` (2 seconds)
 - Only consider it failed if you see explicit error messages like "Installation failed" or "安装失败"
 - DO NOT click "Cancel" or take other actions just because installation is taking time
 
@@ -138,28 +137,18 @@ Before ending task (using terminate or answer):
 - If there was wrong selection, missed selection, or extra selection, go back and correct
 - Only use terminate status=success when task is fully completed
 
-### Rule 9.5: Handle Repetitive Tasks - Watch N Videos Correctly (CRITICAL)
-When task requires repeating an action N times (e.g., "看10个视频，每个视频看10秒"):
-
-**Understanding "Watch N Videos":**
-- "看10个视频" means watch 10 DIFFERENT videos, NOT the same video 10 times
-- After watching one video, you MUST swipe to the NEXT video
-- Each video is a SEPARATE item in the count
-
-**Correct workflow for "看10个视频，每个看10秒":**
-1. Watch current video: `{"action": "wait", "duration": 10}`
-2. Record progress: `{"action": "note", "text": "Watched 1/10 videos"}`
-3. Swipe to next video: `{"action": "swipe", "direction": "up"}` (in short video apps like 抖音)
-4. Watch new video: `{"action": "wait", "duration": 10}`
-5. Record progress: `{"action": "note", "text": "Watched 2/10 videos"}`
-6. Repeat steps 3-5 until 10/10
-
-**IMPORTANT:**
-- DO NOT "pause" videos - just wait and let them play
-- DO NOT stay on the same video for multiple wait cycles
-- Each "wait" + "swipe" cycle = 1 video watched
-- In <thinking>, state: "Watched video X/N, now swiping to next video"
-- Before terminating, verify: "I have watched 10 DIFFERENT videos"
+### Rule 9.5: Watch N Videos - Simple and Smooth
+For tasks like "看N个视频，每个看X秒":
+- Short video apps (抖音, 快手) AUTO-PLAY videos, no need to click play
+- **Simple workflow:** `wait(X秒) → swipe(up) → wait(X秒) → swipe(up) → ...`
+- Example for "看3个视频，每个10秒":
+  1. `{"action": "wait", "duration": 10}` - video 1
+  2. `{"action": "swipe", "direction": "up"}` - next
+  3. `{"action": "wait", "duration": 10}` - video 2
+  4. `{"action": "swipe", "direction": "up"}` - next
+  5. `{"action": "wait", "duration": 10}` - video 3
+  6. Done!
+- Key: NO pause, NO click, just wait and swipe alternately
 
 ### Rule 10: Fail Gracefully
 If unable to complete task after multiple attempts:
@@ -394,8 +383,8 @@ In app stores (应用宝, Google Play, etc.):
 ### Rule 5.5: Be Patient - Use Long Wait Duration (CRITICAL)
 For app installation/download operations:
 - **NEVER** cancel ongoing installation/download
-- **USE LONG WAIT:** `{"action": "wait", "duration": 30}` for install, not 2-second waits!
-- First wait 30s, then 15s if still installing
+- **USE LONG WAIT:** `{"action": "wait", "duration": 10}` for install
+- First wait 10s, then 2s if still installing
 - Only fail if you see "安装失败" or "Installation failed"
 
 ### Rule 6: Swipe to Find Strategy
@@ -414,15 +403,10 @@ For app installation/download operations:
 ### Rule 9: Verify Before Task Completion
 - Carefully verify task was completed completely and accurately before using terminate
 
-### Rule 9.5: Watch N Videos = N DIFFERENT Videos (CRITICAL)
-For "看N个视频，每个看X秒":
-- "看10个视频" = watch 10 DIFFERENT videos, NOT same video 10 times
-- **Workflow per video:**
-  1. `{"action": "wait", "duration": X}` - watch current video
-  2. `{"action": "note", "text": "Watched M/N videos"}` - record progress
-  3. `{"action": "swipe", "direction": "up"}` - swipe to NEXT video
-- DO NOT pause videos, DO NOT stay on same video
-- Each wait+swipe cycle = 1 video watched
+### Rule 9.5: Watch N Videos - Simple Flow
+- Short videos AUTO-PLAY, no click needed
+- **Just alternate:** `wait(X秒) → swipe(up) → wait(X秒) → swipe(up) → ...`
+- NO pause, NO click play, just wait and swipe
 
 ### Rule 10: Fail Gracefully
 - DO NOT click on a similar but incorrect target as fallback
